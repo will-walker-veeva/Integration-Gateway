@@ -1,0 +1,17 @@
+2023-12-04T12:00:30.486Z init(): Starts
+2023-12-04T12:00:30.579Z init(): Ends
+2023-12-04T12:00:30.780Z Task1 process(): Starts
+2023-12-04T12:00:31.392Z Task1 Failed to run SDK Job process() method. Http response status code is not 200
+2023-12-04T12:00:31.472Z Task1 process(): Ends
+2023-12-04T12:00:31.506Z completeWithError(): Starts
+2023-12-04T12:00:31.600Z completeWithError: 1tasks failed out of 1
+2023-12-04T12:00:31.601Z Task1 failed with error message null
+2023-12-04T12:00:31.602Z completeWithError(): Ends
+2023-12-04T12:00:31.650Z 
+2023-12-04T12:00:31.650Z Job Title: Health Check Job
+2023-12-04T12:00:31.651Z Job Type: SDK_BATCH_JOB
+2023-12-04T12:00:31.651Z Job Schedule Time: 2023-12-04T11:58:05.000Z
+2023-12-04T12:00:31.651Z Job Queue Time: 2023-12-04T12:00:29.000Z
+2023-12-04T12:00:31.651Z Job Execution Time: 2023-12-04T12:00:30.000Z
+2023-12-04T12:00:31.651Z Job Finish Time: 2023-12-04T12:00:32.000Z
+2023-12-04T12:00:31.651Z Job Completion Status: Errors Encountered (COMPLETED_WITH_ERROR)
