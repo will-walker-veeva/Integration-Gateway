@@ -1,19 +1,15 @@
 package com.veeva.vault.custom.app.model.xml;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.Characters;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
-import java.io.FileInputStream;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
 import java.io.InputStream;
 import java.util.*;
 
 public class XMLReader {
     private XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+    private String dtd = null;
+    private String encoding = null;
+    private String version = null;
     private XMLEventReader reader = null;
     private LinkedList<String> startingXPathList = new LinkedList<>();
     private XMLElement previousEvent;
@@ -22,7 +18,11 @@ public class XMLReader {
         this.reader = xmlInputFactory.createXMLEventReader(inputStream);
     }
 
-    public boolean hasNext(){
+    public boolean hasNext() throws Exception{
+        XMLEvent peek = reader.peek();
+        if (peek.isEndDocument()){
+            return false;
+        }
         return this.reader.hasNext();
     }
 
@@ -60,6 +60,12 @@ public class XMLReader {
             xPATH = "/" + String.join("/", startingXPathList);
             startingXPathList.removeLast();
             response = new XMLEnd(xPATH, event.asEndElement().getName().getLocalPart(), characters);
+        }else if (event.getEventType() == XMLEvent.COMMENT &&  ((javax.xml.stream.events.Comment) event).getText()!=null){
+            xPATH = "/" + String.join("/", startingXPathList);
+            response = new XMLComment(xPATH, ((javax.xml.stream.events.Comment) event).getText());
+        }
+        if(response==null){
+            return getNext();
         }
         characters = null;
         previousEvent = response;
@@ -70,4 +76,27 @@ public class XMLReader {
         return this.reader;
     }
 
+    protected String getDTD(){
+        return this.dtd;
+    }
+
+    protected void initiate() throws Exception{
+        if(reader.hasNext() && reader.peek().getEventType() == XMLStreamConstants.START_DOCUMENT){
+            XMLEvent event = this.reader.nextEvent();
+            this.encoding = ((javax.xml.stream.events.StartDocument) event).getCharacterEncodingScheme();
+            this.version = ((javax.xml.stream.events.StartDocument) event).getVersion();
+            if(reader.hasNext() && reader.peek().getEventType() == XMLStreamConstants.DTD){
+                event = this.reader.nextEvent();
+                this.dtd =  event.toString();
+            }
+        }
+    }
+
+    protected String getEncoding() {
+        return encoding;
+    }
+
+    protected String getVersion() {
+        return version;
+    }
 }

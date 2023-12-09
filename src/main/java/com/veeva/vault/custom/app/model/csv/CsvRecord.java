@@ -12,6 +12,10 @@ import java.util.stream.Stream;
 public class CsvRecord {
     private CSVRecord record;
 
+    /**
+     * @hidden
+     * @param record
+     */
     public CsvRecord(CSVRecord record){
         this.record = record;
     }

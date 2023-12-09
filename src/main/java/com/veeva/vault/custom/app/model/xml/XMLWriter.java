@@ -1,15 +1,12 @@
 package com.veeva.vault.custom.app.model.xml;
 
 
-import javax.xml.stream.XMLEventFactory;
-import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.*;
 import javax.xml.stream.events.*;
 import java.io.OutputStream;
 import java.util.*;
 
-public class XMLWriter {
+public class XMLWriter implements AutoCloseable{
     private XMLOutputFactory xmlOutputFactory = XMLOutputFactory.newInstance();
 
     private XMLEventWriter xmlEventWriter = null;
@@ -17,8 +14,17 @@ public class XMLWriter {
     private Map<String,String> qNameToprefixMap;
     private List<Namespace> namespacesList = new ArrayList<Namespace>();
 
-    public XMLWriter(OutputStream outputStream) throws Exception{
+    public XMLWriter(OutputStream outputStream, XMLReader reader) throws Exception{
         xmlEventWriter = xmlOutputFactory.createXMLEventWriter(outputStream);
+        reader.initiate();
+        if(reader.getEncoding()!=null) xmlEventWriter.add(eventFactory.createStartDocument(reader.getEncoding(), reader.getVersion()));
+        if(reader.getDTD()!=null) xmlEventWriter.add(eventFactory.createDTD(reader.getDTD()));
+    }
+
+    public XMLWriter(OutputStream outputStream, String encoding, String version, String dtd) throws Exception{
+        xmlEventWriter = xmlOutputFactory.createXMLEventWriter(outputStream);
+        if(encoding!=null) xmlEventWriter.add(eventFactory.createStartDocument(encoding, version));
+        if(dtd!=null) xmlEventWriter.add(eventFactory.createDTD(dtd));
     }
 
     public void add(XMLElement xmlElement) throws Exception {
@@ -79,10 +85,7 @@ public class XMLWriter {
     }
 
     public void close() throws Exception{
-        this.xmlEventWriter.close();
-    }
-
-    public void flush() throws Exception{
         this.xmlEventWriter.flush();
+        this.xmlEventWriter.close();
     }
 }

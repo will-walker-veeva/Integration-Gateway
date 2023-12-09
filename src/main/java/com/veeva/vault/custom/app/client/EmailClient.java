@@ -10,6 +10,17 @@ import org.springframework.stereotype.Service;
 public class EmailClient {
     private static AppConfiguration appConfiguration;
 
+    /**
+     * @hidden 
+     */
+    public EmailClient(){
+
+    }
+
+    /**
+     * @hidden
+     * @param appConfiguration
+     */
     @Autowired
     public void setAppConfiguration(AppConfiguration appConfiguration){
         EmailClient.appConfiguration = appConfiguration;
@@ -18,7 +29,14 @@ public class EmailClient {
     @Autowired
     EncryptionClient encryptionClient;
 
-    void sendNotification(String emailAddress, String subject, String body)  throws Exception{
+    /**
+     * Sends an email tp the given email address with the given subject and body
+     * @param emailAddress
+     * @param subject
+     * @param body
+     * @throws Exception
+     */
+    public void sendNotification(String emailAddress, String subject, String body)  throws Exception{
         Email email = new SimpleEmail();
         email.setHostName(appConfiguration.getEmailHost());
         email.setSmtpPort(appConfiguration.getEmailPort());
@@ -30,7 +48,15 @@ public class EmailClient {
         email.send();
     }
 
-    void sendNotification(String emailAddress, String subject, String body, File file) throws Exception{
+    /**
+     * Sends an email tp the given email address with the given subject, body and attachment
+     * @param emailAddress
+     * @param subject
+     * @param body
+     * @param file
+     * @throws Exception
+     */
+    public void sendNotification(String emailAddress, String subject, String body, File file) throws Exception{
         MultiPartEmail email = new MultiPartEmail();
         email.setHostName(appConfiguration.getEmailHost());
         email.setSmtpPort(appConfiguration.getEmailPort());
@@ -48,6 +74,11 @@ public class EmailClient {
         email.send();
     }
 
+    /**
+     * @hidden
+     * @param encryptedPassword
+     * @return
+     */
     private String getDecryptedPassword(String encryptedPassword){
         return encryptionClient.decrypt(encryptedPassword);
     }

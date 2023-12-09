@@ -29,6 +29,11 @@ public class Logger {
         this.requestProcessorId = requestProcessorId;
     }
 
+    /**
+     * @hidden
+     * @param threadId
+     * @return
+     */
     public static List<Log> getLogs(String threadId){
         List<Log> logsToSend = logs.get(threadId);
         logs.put(threadId, new ArrayList<Log>());

@@ -5,6 +5,10 @@ import org.apache.commons.csv.CSVFormat;
 public class CsvFormat {
     private CSVFormat csvFormat;
 
+    /**
+     * @hidden
+     * @param csvFormat
+     */
     public CsvFormat(CSVFormat csvFormat){
         this.csvFormat = csvFormat;
     }
@@ -13,6 +17,10 @@ public class CsvFormat {
         this.csvFormat = CSVFormat.Builder.create().setDelimiter(delimiter).setEscape(escape).setNullString(nullString).setHeader(headers).build();
     }
 
+    /**
+     * @hidden
+     * @return
+     */
     public CSVFormat getCsvFormat(){
         return this.csvFormat;
     }

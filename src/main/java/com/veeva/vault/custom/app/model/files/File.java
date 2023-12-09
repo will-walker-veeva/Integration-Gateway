@@ -12,10 +12,19 @@ public class File {
     private java.io.File file;
     private boolean isDeleteAsync = false;
 
+    /**
+     * @hidden
+     * @param file
+     */
     public File(@NotNull java.io.File file) {
         this.file=file;
     }
 
+    /**
+     * @hidden
+     * @param file
+     * @param isDeleteAsync
+     */
     public File(@NotNull java.io.File file, boolean isDeleteAsync) {
         this.isDeleteAsync = isDeleteAsync;
         this.file = file;

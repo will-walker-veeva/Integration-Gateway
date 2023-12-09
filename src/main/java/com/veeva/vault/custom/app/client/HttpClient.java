@@ -41,10 +41,17 @@ public class HttpClient{
         return builder;
     }
 
+    /**
+     * @hidden
+     */
     private HttpClient(){
         
     }
 
+    /**
+     * @hidden
+     * @return
+     */
     public static HttpClient newInstance(){
         return new HttpClient();
     }

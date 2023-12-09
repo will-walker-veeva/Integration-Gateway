@@ -15,12 +15,19 @@ public class EncryptionClient {
     private String algorithm = "PBEWithHMACSHA512AndAES_256";
     private StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
 
+    /**
+     * @hidden
+     * @param appConfiguration
+     */
     @Autowired
     public void setAppConfiguration(AppConfiguration appConfiguration){
         EncryptionClient.appConfiguration = appConfiguration;
         init();
     }
 
+    /**
+     * @hidden
+     */
     public EncryptionClient(){
         try{
             init();
@@ -29,18 +36,28 @@ public class EncryptionClient {
         }
     }
 
-    public void init() {
+    private void init() {
         encryptor = new StandardPBEStringEncryptor();
         encryptor.setPassword(appConfiguration.getDecryptionToken());
         encryptor.setAlgorithm(algorithm);
         encryptor.setIvGenerator(new RandomIvGenerator());
     }
 
+    /**
+     * Encrypts the given message using the application's security key
+     * @param message
+     * @return The encrypted message
+     */
     public String encrypt(String message) {
         Objects.requireNonNull(message, "Message must not be null");
         return encryptor.encrypt(message);
     }
 
+    /**
+     * Decrypts the given message using the application's security key
+     * @param message
+     * @return The decrypted message
+     */
     public String decrypt(String message) {
         Objects.requireNonNull(message, "Message must not be null");
         return encryptor.decrypt(message);

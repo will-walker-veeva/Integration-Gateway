@@ -19,10 +19,17 @@ public class TemplateProcessorClient {
 
     }
 
+    /**
+     * @hidden
+     * @return
+     */
     public static TemplateProcessorClient newInstance(){
         return new TemplateProcessorClient();
     }
 
+    /**
+     * @hidden
+     */
     private static String processTemplate(String template, JsonObject properties, TemplateMode templateMode) throws Exception{
         Context context = getContext(properties.toString());
         TemplateEngine templateEngine = getTemplateEngine(templateMode);
@@ -35,17 +42,41 @@ public class TemplateProcessorClient {
         return stringWriter.toString();
     }
 
+    /**
+     *
+     * @param template
+     * @param properties
+     * @return
+     * @throws Exception
+     */
+
     public static String processXmlTemplate(String template, JsonObject properties) throws Exception{
         return processTemplate(template, properties, TemplateMode.XML);
     }
 
+    /**
+     *
+     * @param template
+     * @param properties
+     * @return
+     * @throws Exception
+     */
     public static String processHtmlTemplate(String template, JsonObject properties) throws Exception {
         return processTemplate(template, properties, TemplateMode.HTML);
     }
 
+    /**
+     *
+     * @param template
+     * @param properties
+     * @return
+     * @throws Exception
+     */
     public static String processTextTemplate(String template, JsonObject properties) throws Exception {
         return processTemplate(template, properties, TemplateMode.TEXT);
     }
+
+    
 
     private static Context getContext(String dataString) throws Exception{
         Map<String, Object> modelMap = new ObjectMapper().readValue(dataString, HashMap.class);
