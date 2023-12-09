@@ -36,7 +36,7 @@
     <orderEntry type="library" name="Maven: org.javassist:javassist:3.29.0-GA" level="project" />
     <orderEntry type="library" name="Maven: org.attoparser:attoparser:2.0.6.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.unbescape:unbescape:1.1.6.RELEASE" level="project" />
-    <orderEntry type="library" name="Maven: org.json:json:20220924" level="project" />
+    <orderEntry type="library" name="Maven: org.json:json:20231013" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.0" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot-starter:3.0.5" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot:3.0.5" level="project" />
@@ -89,7 +89,7 @@
     <orderEntry type="library" name="Maven: org.springframework:spring-orm:6.0.7" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-tx:6.0.7" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-aspects:6.0.7" level="project" />
-    <orderEntry type="library" name="Maven: com.h2database:h2:2.1.214" level="project" />
+    <orderEntry type="library" name="Maven: com.h2database:h2:2.2.224" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.data:spring-data-commons:3.0.4" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-beans:6.0.7" level="project" />
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpmime:4.5.13" level="project" />
