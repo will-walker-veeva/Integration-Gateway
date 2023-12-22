@@ -10,6 +10,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.io.FileUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.stereotype.Service;
 import org.xhtmlrenderer.layout.SharedContext;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
@@ -23,8 +24,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Service
 public class FilesClient {
     private Client client;
+
+    /**
+     * @hidden
+     */
+    public FilesClient(){
+
+    }
 
     /**
      * @hidden
@@ -41,6 +50,7 @@ public class FilesClient {
      * @throws Exception
      */
     public File createTemporaryFile(String extension) throws Exception{
+        if(this.client == null) throw new Exception("Unauthorized client");
         File file = new File(java.io.File.createTempFile("tmp", "."+extension));
         this.client.registerFile(file);
         return file;

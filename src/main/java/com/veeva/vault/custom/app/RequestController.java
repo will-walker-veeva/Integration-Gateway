@@ -4,23 +4,19 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import com.veeva.vault.custom.app.admin.*;
-import com.veeva.vault.custom.app.client.ScriptExecutionUtils;
-import com.veeva.vault.custom.app.repository.ThreadRegistry;
-import com.veeva.vault.custom.app.repository.VaultConfigurationRepository;
-import com.veeva.vault.custom.app.repository.VaultSessionRepository;
-import com.veeva.vault.custom.app.client.Client;
-import com.veeva.vault.custom.app.client.Logger;
-import com.veeva.vault.custom.app.model.http.HttpRequest;
-import com.veeva.vault.custom.app.model.http.HttpResponse;
-import com.veeva.vault.vapil.api.client.VaultClient;
-import com.veeva.vault.vapil.api.model.response.ObjectRecordBulkResponse;
-import com.veeva.vault.vapil.api.request.ObjectRecordRequest;
+import com.veeva.vault.custom.app.client.*;
+import com.veeva.vault.custom.app.model.json.JsonObject;
+import com.veeva.vault.custom.app.repository.*;
+import com.veeva.vault.custom.app.model.http.*;
+import com.veeva.vault.vapil.api.client.*;
+import com.veeva.vault.vapil.api.model.response.*;
+import com.veeva.vault.vapil.api.request.*;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.io.IOUtils;
-import org.apache.logging.log4j.LogManager;
-import org.json.JSONObject;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.http.HttpHeaders;
@@ -64,7 +60,17 @@ public class RequestController {
     @Autowired
     ThreadRegistry threadRegistry;
 
+    FilesClient filesClient;
+
     ArrayBlockingQueue<SparkMessageRequest> sparkMessageQueue = new ArrayBlockingQueue<>(20000);
+
+    /**
+     * @hidden
+     */
+    @Autowired
+    public void setFilesClient(){
+        this.filesClient = new FilesClient();
+    }
 
     @PostMapping(path = "/rest/{environment}/{customerId}/{endPoint}", consumes = "application/x-www-form-urlencoded")
     public ResponseEntity handleFormPost(@PathVariable String environment, @PathVariable String customerId, @PathVariable String endPoint, @RequestHeader HttpHeaders httpHeaders, @RequestParam MultiValueMap<String,String> paramMap, HttpServletRequest request, HttpServletResponse response){
@@ -81,7 +87,7 @@ public class RequestController {
                     Client client = scriptExecutionUtils.executeScript(httpRequest, processor, httpResponse);
                     if (client != null && httpResponse.getResponseCode() == 200) {
                         if (processor.getResponseType() == Processor.ResponseType.file__c) {
-                            responseEntity = ResponseEntity.status(httpResponse.getResponseCode()).body(IOUtils.toByteArray(httpResponse.getResponseFile().getInputStream()));
+                            responseEntity = ResponseEntity.status(httpResponse.getResponseCode()).body(this.filesClient.readFileToByteArray(httpResponse.getResponseFile()));
                         } else if (processor.getResponseType() == Processor.ResponseType.webpage__c) {
                             responseEntity = ResponseEntity.status(httpResponse.getResponseCode()).body(httpResponse.getResponseView());
                         } else {
@@ -123,7 +129,7 @@ public class RequestController {
                 if (client != null && httpResponse.getResponseCode() == 200) {
                     if (processor.getResponseType() == Processor.ResponseType.file__c) {
                         try {
-                            responseEntity = ResponseEntity.status(httpResponse.getResponseCode()).body(IOUtils.toByteArray(httpResponse.getResponseFile().getInputStream()));
+                            responseEntity = ResponseEntity.status(httpResponse.getResponseCode()).body(this.filesClient.readFileToByteArray(httpResponse.getResponseFile()));
                         } catch (Exception e) {
                             responseEntity = ResponseEntity.internalServerError().body(e.getMessage());
                         }
@@ -165,7 +171,7 @@ public class RequestController {
                     Client client = scriptExecutionUtils.executeScript(httpRequest, processor, httpResponse);
                     if (client != null && httpResponse.getResponseCode() == 200) {
                         if (processor.getResponseType() == Processor.ResponseType.file__c) {
-                            responseEntity = ResponseEntity.status(httpResponse.getResponseCode()).body(IOUtils.toByteArray(httpResponse.getResponseFile().getInputStream()));
+                            responseEntity = ResponseEntity.status(httpResponse.getResponseCode()).body(this.filesClient.readFileToByteArray(httpResponse.getResponseFile()));
                         } else if (processor.getResponseType() == Processor.ResponseType.webpage__c) {
                             responseEntity = ResponseEntity.status(httpResponse.getResponseCode()).body(httpResponse.getResponseView());
                         } else {
@@ -197,16 +203,16 @@ public class RequestController {
         Map<String,String> headers = httpHeaders.toSingleValueMap();
         String certificateId = headers.get("X-VaultAPISignature-CertificateId");
         if(certificateId == null) certificateId =  headers.get("x-vaultapisignature-certificateid");
-        JSONObject jsonBody = null;
+        JsonObject jsonBody = null;
         String vaultName = null;
         String sessionId = null;
-        JSONObject message = null;
+        JsonObject message = null;
         try {
-            jsonBody = new JSONObject(body);
-            vaultName = jsonBody.optString("vault_host_name");
-            message = jsonBody.optJSONObject("message");
-            JSONObject attributes = message != null ? message.optJSONObject("attributes") : null;
-            sessionId = attributes != null ? attributes.optString("authorization") : null;
+            jsonBody = new JsonObject(body);
+            vaultName = jsonBody.getString("vault_host_name");
+            message = jsonBody.getJsonObject("message");
+            JsonObject attributes = message != null ? message.getJsonObject("attributes") : null;
+            sessionId = attributes != null ? attributes.getString("authorization") : null;
         }catch(Exception e){
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return ResponseEntity.status(HttpServletResponse.SC_BAD_REQUEST).build();
@@ -458,7 +464,7 @@ public class RequestController {
 
     @Scheduled(fixedRateString = "100")
     public void pollMessageQueue() {
-        final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+        final Logger logger = Logger.getLogger(this.getClass());
         SparkMessageRequest sparkRequest = null;
         try {
             sparkRequest = sparkMessageQueue.poll(50, TimeUnit.MILLISECONDS);

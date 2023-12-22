@@ -1,5 +1,6 @@
 package com.veeva.vault.custom.app.model.json;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -53,6 +54,7 @@ public class JsonObject {
         this.jsonObject.put(key, object);
     }
 
+    @JsonAnySetter
     public void put(String key, String object){
         this.jsonObject.put(key, object);
     }

@@ -4,24 +4,20 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import com.veeva.vault.custom.app.admin.*;
-import com.veeva.vault.custom.app.client.ScriptExecutionUtils;
-import com.veeva.vault.custom.app.repository.ThreadRegistry;
-import com.veeva.vault.custom.app.repository.VaultConfigurationRepository;
-import com.veeva.vault.custom.app.repository.VaultSessionRepository;
-import com.veeva.vault.custom.app.client.EncryptionClient;
-import com.veeva.vault.custom.app.client.Logger;
-import com.veeva.vault.custom.app.model.json.JsonArray;
-import com.veeva.vault.custom.app.model.json.JsonObject;
-import com.veeva.vault.vapil.api.client.VaultClient;
-import com.veeva.vault.vapil.api.model.response.ObjectRecordBulkResponse;
-import com.veeva.vault.vapil.api.model.response.QueryResponse;
-import com.veeva.vault.vapil.api.request.ObjectRecordRequest;
-import com.veeva.vault.vapil.api.request.QueryRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.json.JSONObject;
+import com.veeva.vault.custom.app.repository.*;
+import com.veeva.vault.custom.app.client.*;
+import com.veeva.vault.custom.app.model.json.*;
+
+import com.veeva.vault.vapil.api.client.*;
+import com.veeva.vault.vapil.api.model.response.*;
+import com.veeva.vault.vapil.api.request.*;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +25,9 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Map;
+import jakarta.servlet.http.HttpServletResponse;
 
 import static com.veeva.vault.custom.app.client.Client.VAULT_CLIENT_ID;
 
@@ -50,6 +48,9 @@ public class AdminController {
 
     @Autowired
     ThreadRegistry threadRegistry;
+
+    @Autowired
+    ContextRepository cacheRepository;
 
     @GetMapping(path = "/customerCode", produces = "text/plain")
     public ResponseEntity customerCode(@RequestParam String customerName) {
@@ -310,5 +311,15 @@ public class AdminController {
             response.setStatus(HttpServletResponse.SC_ACCEPTED);
         }
         return ResponseEntity.ok(object.toString());
+    }
+
+    @Async
+    @Scheduled(fixedRate = 300000)
+    public void clearCache(){
+        cacheRepository.findAll().forEach(cacheContext -> {
+            if(cacheContext.getLastAccessTime().isBefore(Instant.now().minusSeconds(60 * 15))){
+                cacheRepository.delete(cacheContext);
+            }
+        });
     }
 }

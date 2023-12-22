@@ -1,8 +1,6 @@
 package com.veeva.vault.custom.app;
 
-import com.veeva.vault.custom.app.client.HttpClient;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import com.veeva.vault.custom.app.client.*;
 
 import java.security.*;
 import java.util.*;
@@ -18,7 +16,7 @@ public class SparkUtilities {
      * @returns certificate, the certificate retrieved from the vault
      */
     public static String getPublicKey(String hostname, String apiVersion, String sessionId, String certificateId) throws Exception {
-        final Logger logger = LogManager.getLogger();
+        final Logger logger = Logger.getLogger(SparkUtilities.class);
         byte[] publicKey = getCertificate(hostname, apiVersion, sessionId, certificateId);
         return new String(publicKey);
     }
@@ -41,7 +39,7 @@ public class SparkUtilities {
      * @returns verified, an boolean representing whether the spark message was valid
      */
     public static boolean validate(Map<String,String> headers, String body, PublicKey publicKey) {
-        final Logger logger = LogManager.getLogger();
+        final Logger logger = Logger.getLogger(SparkUtilities.class);
         String stringToVerify = null;
 
         // Create the String-to-Verify
@@ -69,7 +67,7 @@ public class SparkUtilities {
      * @returns stringToVerify, the string used to verify the spark message
      */
     public static String prepareDataToVerify(Map<String,String> headers, String body) {
-        final Logger logger = LogManager.getLogger();
+        final Logger logger = Logger.getLogger(SparkUtilities.class);
         // Create set of X-VaultAPISignature-* headers
         Set<String> filteredHeaderSet = new HashSet<>();
         for(String key: headers.keySet()){
@@ -120,7 +118,7 @@ public class SparkUtilities {
      * @returns verified, a boolean value indicating whether the spark message was valid
      */
     public static boolean verifySignUsingCrypto(String stringToVerify, String xVaultAPISignature, PublicKey pubKey) {
-        final Logger logger = LogManager.getLogger();
+        final Logger logger = Logger.getLogger(SparkUtilities.class);
         boolean verified = false;
         try {
             // Create signature using the public key and the string to verify

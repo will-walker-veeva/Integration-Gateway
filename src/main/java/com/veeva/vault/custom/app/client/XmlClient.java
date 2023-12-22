@@ -2,9 +2,11 @@ package com.veeva.vault.custom.app.client;
 
 import com.veeva.vault.custom.app.model.xml.*;
 import com.veeva.vault.custom.app.model.xml.XMLReader;
+import org.springframework.stereotype.Service;
 
 import java.io.*;
 
+@Service
 public class XmlClient {
 
     /**

@@ -1,5 +1,6 @@
 package com.veeva.vault.custom.app.model.json;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -28,6 +29,7 @@ public class JsonArray{
         this.jsonArray.put(new JSONArray(jsonArray.toString()));
     }
 
+    @JsonAnySetter
     public void put(Object object){
         this.jsonArray.put(object);
     }

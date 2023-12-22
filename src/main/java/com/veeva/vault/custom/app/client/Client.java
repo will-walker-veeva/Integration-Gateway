@@ -1,11 +1,14 @@
 package com.veeva.vault.custom.app.client;
 
+import com.veeva.vault.custom.app.admin.CacheContext;
 import com.veeva.vault.custom.app.admin.Log;
 import com.veeva.vault.custom.app.model.files.File;
+import com.veeva.vault.custom.app.repository.ContextRepository;
 import com.veeva.vault.vapil.api.client.VaultClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.security.sasl.AuthenticationException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +27,13 @@ public class Client {
     @Autowired
     private EmailClient emailClient;
 
-    private Client(){
+    @Autowired
+    private ContextRepository contextRepository;
+
+    /**
+     * @hidden
+     */
+    protected Client(){
 
     }
 
@@ -109,6 +118,14 @@ public class Client {
     }
 
     /**
+     * Returns an initialised JsonClient for JSON operations
+     * @return JsonClient
+     */
+    public JsonClient json(){
+        return new JsonClient();
+    }
+
+    /**
      * @hide
      * @param file
      */
@@ -138,5 +155,57 @@ public class Client {
      */
     protected void setLogs(List<Log> logs) {
         this.logs = logs;
+    }
+
+    /**
+     * Authenticates VAPIL client, can be used to then access the cache context
+     * @param vaultDns
+     * @param vaultUsername
+     * @param vaultPassword
+     */
+    public void authenticate(String vaultDns, String vaultUsername, String vaultPassword){
+        this.vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.BASIC).withVaultDNS(vaultDns).withVaultUsername(vaultUsername).withVaultPassword(vaultPassword).withVaultClientId(VAULT_CLIENT_ID).withValidation(true).withApiErrorLogging(true).withHttpTimeout(120).build();
+    }
+
+    /**
+     * Authenticates VAPIL client, can be used to then access the cache context
+     * @param vaultDns
+     * @param vaultSessionId
+     */
+    public void authenticate(String vaultDns, String vaultSessionId){
+        this.vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(vaultDns).withVaultSessionId(vaultSessionId).withVaultClientId(VAULT_CLIENT_ID).withValidation(true).withApiErrorLogging(true).withHttpTimeout(120).build();
+    }
+
+    /**
+     * Sets a given key's value into the Cache Context for a given Vault DNS. VAPIL must be authenticated to access the Cache Context.
+     * @param key
+     * @param value
+     * @throws Exception
+     */
+    public void setCacheContextValue(String key, Object value) throws Exception{
+        if(this.vaultClient.getAuthenticationResponse().isSuccessful()){
+            CacheContext context = contextRepository.findById(this.vaultClient.getVaultDNS()).orElse(new CacheContext(this.vaultClient.getVaultDNS()));
+            context.put(key, value);
+            contextRepository.save(context);
+        }else{
+            throw new AuthenticationException("Unauthorised");
+        }
+    }
+
+    /**
+     * Retrieves a given key's value from the Cache Context for a given Vault DNS. VAPIL must be authenticated to access the Cache Context.
+     * @param key
+     * @param className
+     * @return
+     * @param <T>
+     * @throws Exception
+     */
+    public <T> T getCacheContextValue(String key, Class<T> className) throws Exception{
+        if(this.vaultClient.getAuthenticationResponse().isSuccessful()){
+            CacheContext context = contextRepository.findById(this.vaultClient.getVaultDNS()).orElse(new CacheContext(this.vaultClient.getVaultDNS()));
+            return (T) context.get(key);
+        }else{
+            throw new AuthenticationException("Unauthorised");
+        }
     }
 }
