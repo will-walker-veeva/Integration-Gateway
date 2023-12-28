@@ -24,6 +24,9 @@ public class AppConfiguration {
     @Value("${custom.email.password:#{null}}")
     private String emailPassword;
 
+    @Value("${custom.library.dir:#{null}}")
+    private String scriptLibraryDirectory;
+
     public String getVaultConfigurationHost() {
         return vaultConfigurationHost;
     }
@@ -46,5 +49,9 @@ public class AppConfiguration {
 
     public String getEmailPassword() {
         return emailPassword;
+    }
+
+    public String getScriptLibraryDirectory() {
+        return scriptLibraryDirectory;
     }
 }

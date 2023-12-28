@@ -3,3 +3,13 @@ Integration-Gateway-Middleware.iml
 .idea/workspace.xml
 .idea/aws.xml
 .DS_Store
+.idea/libraries/Maven__org_apache_groovy_groovy_4_0_17.xml
+.idea/libraries/Maven__org_codehaus_groovy_groovy_3_0_19.xml
+.idea/libraries/Maven__org_codehaus_groovy_groovy_console_3_0_19.xml
+.idea/libraries/Maven__org_codehaus_groovy_groovy_swing_3_0_19.xml
+.idea/libraries/Maven__org_codehaus_groovy_groovy_templates_3_0_19.xml
+.idea/libraries/Maven__org_codehaus_groovy_groovy_xml_3_0_19.xml
+.idea/libraries/Maven__qdox_qdox_1_6_1.xml
+.idea/workspace.xml
+Integration-Gateway-Middleware.iml
+src/.DS_Store

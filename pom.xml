@@ -36,9 +36,9 @@
             <version>1.9.3</version>
         </dependency>
         <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-console</artifactId>
-            <version>3.0.19</version>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy</artifactId>
+            <version>4.0.17</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -208,7 +208,11 @@
             <artifactId>junit-platform-launcher</artifactId>
             <version>1.9.2</version>
         </dependency>
-
+        <dependency>
+            <groupId>qdox</groupId>
+            <artifactId>qdox</artifactId>
+            <version>1.6.1</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -3,14 +3,18 @@ package com.veeva.vault.custom.app.admin;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.List;
 
 @Entity
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Processor {
+    public static final String OBJECT_NAME = "processor__c";
     public enum LogLevel{
         error__c,
         warn__c,
@@ -30,7 +34,26 @@ public class Processor {
         sandbox__c,
         validation__c,
         production__c,
-        prerelease__c
+        prerelease__c;
+
+        public String toLabel(){
+            String environmentType = null;
+            switch(this){
+                case sandbox__c:
+                    environmentType="Sandbox";
+                    break;
+                case validation__c:
+                    environmentType="Validation";
+                    break;
+                case production__c:
+                    environmentType="Production";
+                    break;
+                case prerelease__c:
+                    environmentType="Prerelease";
+                    break;
+            }
+            return environmentType;
+        }
     }
 
     public enum AuthenticationMethod{
@@ -92,6 +115,10 @@ public class Processor {
     @JsonProperty("method__c")
     private List<Method> method;
 
+    @JsonProperty("libraryprocessor_joins__cr")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private ScriptLibraryHolder scriptLibraryHolder;
+
     public Processor() {
     }
 
@@ -151,5 +178,26 @@ public class Processor {
 
     public Method getMethod() {
         return method!=null && !method.isEmpty()? method.get(0) : null;
+    }
+
+    public ScriptLibraryHolder getScriptLibraryHolder() {
+        return scriptLibraryHolder;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Embeddable
+    public static class ScriptLibraryHolder{
+
+        @JsonProperty("data")
+        @JdbcTypeCode(SqlTypes.JSON)
+        private List<ScriptLibrary> scriptLibraries;
+
+        public ScriptLibraryHolder(){
+
+        }
+
+        public List<ScriptLibrary> getScriptLibraries() {
+            return scriptLibraries;
+        }
     }
 }

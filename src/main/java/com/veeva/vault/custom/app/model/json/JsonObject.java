@@ -1,9 +1,9 @@
 package com.veeva.vault.custom.app.model.json;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 public class JsonObject {
     private JSONObject jsonObject = new JSONObject();
     public JsonObject(){

@@ -9,5 +9,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface JsonElement {
     public String key();
-    public String[] aliases() default {""};
+    //public String[] aliases() default {""};
 }

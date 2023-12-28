@@ -32,7 +32,7 @@ public class EncryptionClient {
         try{
             init();
         }catch(Exception e){
-            e.printStackTrace();
+            Logger.getLogger(this.getClass()).error(e.getMessage(), e);
         }
     }
 

@@ -111,6 +111,7 @@
         <input type="hidden" id="authorization" name="authorization" th:value="${authorization}">
         <input type="hidden" id="field" name="field" th:value="${field}">
         <input type="hidden" id="id" name="id" th:value="${id}">
+        <input type="hidden" id="objectName" name = "objectName" th:value="${objectName}">
         <textarea class="CodeMirror cm-s-default" id="java-code" name="definition" th:text="${definition}"></textarea>
         <button type="submit" class="button-4" role="button" name="button" th:text="${field.equals('configuration__c')}? 'Save' : 'Compile and Save'"></button>
     </form>

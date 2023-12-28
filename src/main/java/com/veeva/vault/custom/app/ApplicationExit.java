@@ -30,7 +30,7 @@ public class ApplicationExit {
 
     @PreDestroy
     public void destroy() {
-        String userHomeDir = System.getProperty("config.home");
+        String userHomeDir = System.getProperty("user.home");
         File configFile = new File(userHomeDir+"/config.json");
         Logger logger = Logger.getLogger(Application.class);
         try {

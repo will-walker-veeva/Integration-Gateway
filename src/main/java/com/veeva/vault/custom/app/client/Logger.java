@@ -194,4 +194,8 @@ public class Logger {
     public void trace(String message, Throwable e, Object ... arguments){
         log(message, Level.TRACE, e, arguments);
     }
+
+    protected boolean isDebugEnabled(){
+        return this.logger.isDebugEnabled();
+    }
 }

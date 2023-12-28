@@ -1,10 +1,15 @@
 package com.veeva.vault.custom.app.admin;
 
 import com.veeva.vault.custom.app.model.json.JsonObject;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 @Entity
 public class CacheContext {
@@ -12,8 +17,8 @@ public class CacheContext {
     private String vaultDns;
 
     private Instant lastAccessTime;
-
-    private JsonObject data = new JsonObject();
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> data = new HashMap<String, Object>();
 
     public CacheContext(String vaultDns){
         this.vaultDns = vaultDns;

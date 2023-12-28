@@ -28,18 +28,4 @@ public class JsonTest {
         System.out.println(model.subObject);
         System.out.println(jsonClient.deserializeObject(model));
     }
-
-    public static class MyModel implements JsonModel{
-        @JsonElement(key = "my_value__c")
-        String myValue;
-
-        @JsonElement(key = "data")
-        JsonObject subObject;
-
-        String someOtherValue;
-
-        public MyModel(){
-
-        }
-    }
 }
