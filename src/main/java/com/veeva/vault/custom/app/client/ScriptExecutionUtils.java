@@ -1,12 +1,9 @@
 package com.veeva.vault.custom.app.client;
 
-import com.thoughtworks.qdox.JavaDocBuilder;
-import com.thoughtworks.qdox.model.JavaSource;
 import com.veeva.vault.custom.app.admin.AppConfiguration;
+import com.veeva.vault.custom.app.exception.ProcessException;
 import com.veeva.vault.custom.app.admin.Processor;
 import com.veeva.vault.custom.app.admin.ScriptLibrary;
-import com.veeva.vault.custom.app.client.Client;
-import com.veeva.vault.custom.app.client.Logger;
 import com.veeva.vault.custom.app.model.files.File;
 import com.veeva.vault.custom.app.model.json.JsonObject;
 import com.veeva.vault.custom.app.model.http.HttpRequest;
@@ -16,16 +13,13 @@ import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import groovy.util.GroovyScriptEngine;
-import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.control.customizers.SecureASTCustomizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.FileReader;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -42,12 +36,12 @@ public class ScriptExecutionUtils {
     }
 
     @Autowired
-    Client autowiredClient;
+    private Client autowiredClient;
 
     @Autowired
-    AppConfiguration appConfiguration;
+    private AppConfiguration appConfiguration;
 
-    FilesClient filesClient;
+    private FilesClient filesClient;
 
     private Logger logger;
 
@@ -241,7 +235,7 @@ public class ScriptExecutionUtils {
         try {
             File file = new File(javaFile);
             this.filesClient.writeStringToFile(file, processor.getDefinition(), StandardCharsets.UTF_8);
-        }catch(Exception e){
+        }catch(ProcessException e){
             e.printStackTrace();
             response = new ScriptValidationResponse(false, e.getMessage());
         }
@@ -256,7 +250,7 @@ public class ScriptExecutionUtils {
             File file = new File(javaFile);
             this.filesClient.writeStringToFile(file, scriptLibrary.getDefinition(), StandardCharsets.UTF_8);
             init();
-        }catch(Exception e){
+        }catch(ProcessException e){
             e.printStackTrace();
             response = new ScriptValidationResponse(false, e.getMessage());
         }

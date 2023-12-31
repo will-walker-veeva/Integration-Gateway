@@ -1,6 +1,7 @@
 package com.veeva.vault.custom.app.client;
 
 import com.veeva.vault.custom.app.admin.AppConfiguration;
+import com.veeva.vault.custom.app.exception.ProcessException;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.iv.RandomIvGenerator;
 import org.springframework.beans.factory.annotation.Autowired;

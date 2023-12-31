@@ -1,32 +1,34 @@
 package com.veeva.vault.custom.app.client;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.AnnotatedField;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.veeva.vault.custom.app.exception.ProcessException;
+import com.veeva.vault.custom.app.model.files.File;
+import com.veeva.vault.custom.app.model.json.JsonObject;
 import com.veeva.vault.custom.app.model.json.JsonProperty;
 import com.veeva.vault.custom.app.model.json.JsonModel;
 import com.veeva.vault.custom.app.model.json.JsonPropertyOption;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
+
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class JsonClient {
     private ObjectMapper objectMapper;
+    private FilesClient filesClient = new FilesClient();
 
     /**
      * @hidden
@@ -39,21 +41,48 @@ public class JsonClient {
         objectMapper.registerModule(module);
     }
 
-    public <T extends JsonModel> T deserializeObject(String jsonString, Class<T> className) throws Exception{
-        return objectMapper.readerFor(className).readValue(jsonString, className);
+    public <T extends JsonModel> T deserializeObject(String jsonString, Class<T> className) throws ProcessException {
+        try{
+            return objectMapper.readerFor(className).readValue(jsonString, className);
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
+        }
     }
 
-    public <T extends JsonModel> String serializeObject(T model) throws Exception{
-        return objectMapper.writeValueAsString(model);
+    public <T extends JsonModel> String serializeObject(T model) throws ProcessException {
+        try{
+            return objectMapper.writeValueAsString(model);
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
+        }
     }
 
-    public <T extends JsonModel> List<T> deserializeObjects(String jsonString, Class<T> className) throws Exception{
-        JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, className);
-        return objectMapper.readValue(jsonString, type);
+    public <T extends JsonModel> List<T> deserializeObjects(String jsonString, Class<T> className) throws ProcessException {
+        try{
+            JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, className);
+            return objectMapper.readValue(jsonString, type);
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
+        }
+
     }
 
-    public <T extends JsonModel> String serializeObjects(List<T> models) throws Exception{
-        return objectMapper.writeValueAsString(models);
+    public <T extends JsonModel> String serializeObjects(List<T> models) throws ProcessException {
+        try{
+            return objectMapper.writeValueAsString(models);
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
+        }
+    }
+
+    /**
+     *
+     * @param file
+     * @return
+     * @throws ProcessException
+     */
+    public JsonObject readFile(File file) throws ProcessException {
+        return new JsonObject(filesClient.readFileToString(file, StandardCharsets.UTF_8));
     }
 
     private static class JsonAnnotationIntrospector extends JacksonAnnotationIntrospector {
@@ -117,7 +146,10 @@ public class JsonClient {
         @Override
         public Boolean hasAnyGetter(Annotated a){
             JsonProperty property = a.getAnnotation(JsonProperty.class);
+            JsonAnyGetter anyGetter = a.getAnnotation(JsonAnyGetter.class);
             if(property!=null && Arrays.stream(property.options()).anyMatch(jsonPropertyOption -> jsonPropertyOption == JsonPropertyOption.ANY_GETTER)){
+                return true;
+            }else if(anyGetter!=null){
                 return true;
             }
             return false;
@@ -126,7 +158,10 @@ public class JsonClient {
         @Override
         public Boolean hasAnySetter(Annotated a){
             JsonProperty property = a.getAnnotation(JsonProperty.class);
+            JsonAnySetter anySetter = a.getAnnotation(JsonAnySetter.class);
             if(property!=null && Arrays.stream(property.options()).anyMatch(jsonPropertyOption -> jsonPropertyOption == JsonPropertyOption.ANY_SETTER)){
+                return true;
+            }else if(anySetter!=null){
                 return true;
             }
             return false;

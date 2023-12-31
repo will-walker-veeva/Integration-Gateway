@@ -1,5 +1,6 @@
 package com.veeva.vault.custom.app.client;
 
+import com.veeva.vault.custom.app.exception.ProcessException;
 import com.veeva.vault.custom.app.model.http.HttpResponseType;
 import com.veeva.vault.custom.app.model.json.JsonArray;
 import com.veeva.vault.custom.app.model.json.JsonObject;
@@ -63,23 +64,27 @@ public class HttpClient{
      * @param url Target URL for request
      * @param headers Headers passed with the request
      * @return Response
-     * @throws Exception
+     * @throws ProcessException
      */
-    public <T> T get(String url, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
-        HttpRequest request = buildRequest(url, headers).GET().build();
-        java.net.http.HttpClient client = newClient();
-        if (HttpResponseType.STRING.equals(responseType)) {
-            HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) strResponse.body();
-        } else if (HttpResponseType.JSONDATA.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonObject(jsonResponse.body());
-        } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonArray(jsonResponse.body());
-        } else if (HttpResponseType.BINARY.equals(responseType)) {
-            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            return (T) response.body();
+    public <T> T get(String url, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
+        try {
+            HttpRequest request = buildRequest(url, headers).GET().build();
+            java.net.http.HttpClient client = newClient();
+            if (HttpResponseType.STRING.equals(responseType)) {
+                HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) strResponse.body();
+            } else if (HttpResponseType.JSONDATA.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonObject(jsonResponse.body());
+            } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonArray(jsonResponse.body());
+            } else if (HttpResponseType.BINARY.equals(responseType)) {
+                HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+                return (T) response.body();
+            }
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
         }
         return null;
     }
@@ -92,23 +97,27 @@ public class HttpClient{
      * @param body Request body
      * @param headers Headers passed with the request
      * @return Response
-     * @throws Exception
+     * @throws ProcessException
      */
-    public <T> T post(String url, String body, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
-        HttpRequest request = buildRequest(url, headers).POST(HttpRequest.BodyPublishers.ofString(body)).build();
-        java.net.http.HttpClient client = newClient();
-        if (HttpResponseType.STRING.equals(responseType)) {
-            HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) strResponse.body();
-        } else if (HttpResponseType.JSONDATA.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonObject(jsonResponse.body());
-        } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonArray(jsonResponse.body());
-        } else if (HttpResponseType.BINARY.equals(responseType)) {
-            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            return (T) response.body();
+    public <T> T post(String url, String body, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
+        try {
+            HttpRequest request = buildRequest(url, headers).POST(HttpRequest.BodyPublishers.ofString(body)).build();
+            java.net.http.HttpClient client = newClient();
+            if (HttpResponseType.STRING.equals(responseType)) {
+                HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) strResponse.body();
+            } else if (HttpResponseType.JSONDATA.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonObject(jsonResponse.body());
+            } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonArray(jsonResponse.body());
+            } else if (HttpResponseType.BINARY.equals(responseType)) {
+                HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+                return (T) response.body();
+            }
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
         }
         return null;
     }
@@ -119,10 +128,10 @@ public class HttpClient{
      * @param parameters Form body
      * @param headers Headers passed with the request
      * @return Response
-     * @throws Exception
+     * @throws ProcessException
      */
     
-    public <T> T post(String url, Map<String, String> parameters, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
+    public <T> T post(String url, Map<String, String> parameters, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
         String body = parameters.entrySet()
                 .stream()
                 .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
@@ -136,10 +145,10 @@ public class HttpClient{
      * @param body Request body
      * @param headers Headers passed with the request
      * @return
-     * @throws Exception
+     * @throws ProcessException
      */
 
-    public <T> T post(String url, JsonObject body, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception{
+    public <T> T post(String url, JsonObject body, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
         return (T) post(url, body.toString(), headers, responseType);
     }
 
@@ -149,23 +158,27 @@ public class HttpClient{
      * @param body Request body
      * @param headers Headers passed with the request
      * @return Response
-     * @throws Exception
+     * @throws ProcessException
      */
-    public <T> T post(String url, byte[] body, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
-        HttpRequest request = buildRequest(url, headers).POST(HttpRequest.BodyPublishers.ofByteArray(body)).build();
-        java.net.http.HttpClient client = newClient();
-        if (HttpResponseType.STRING.equals(responseType)) {
-            HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) strResponse.body();
-        } else if (HttpResponseType.JSONDATA.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonObject(jsonResponse.body());
-        } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonArray(jsonResponse.body());
-        } else if (HttpResponseType.BINARY.equals(responseType)) {
-            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            return (T) response.body();
+    public <T> T post(String url, byte[] body, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
+        try{
+            HttpRequest request = buildRequest(url, headers).POST(HttpRequest.BodyPublishers.ofByteArray(body)).build();
+            java.net.http.HttpClient client = newClient();
+            if (HttpResponseType.STRING.equals(responseType)) {
+                HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) strResponse.body();
+            } else if (HttpResponseType.JSONDATA.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonObject(jsonResponse.body());
+            } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonArray(jsonResponse.body());
+            } else if (HttpResponseType.BINARY.equals(responseType)) {
+                HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+                return (T) response.body();
+            }
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
         }
         return null;
     }
@@ -176,23 +189,27 @@ public class HttpClient{
      * @param body Request body
      * @param headers Headers passed with the request
      * @return Response
-     * @throws Exception
+     * @throws ProcessException
      */
-    public <T> T put(String url, String body, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
-        HttpRequest request = buildRequest(url, headers).PUT(HttpRequest.BodyPublishers.ofString(body)).build();
-        java.net.http.HttpClient client = newClient();
-        if (HttpResponseType.STRING.equals(responseType)) {
-            HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) strResponse.body();
-        } else if (HttpResponseType.JSONDATA.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonObject(jsonResponse.body());
-        } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonArray(jsonResponse.body());
-        } else if (HttpResponseType.BINARY.equals(responseType)) {
-            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            return (T) response.body();
+    public <T> T put(String url, String body, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
+        try {
+            HttpRequest request = buildRequest(url, headers).PUT(HttpRequest.BodyPublishers.ofString(body)).build();
+            java.net.http.HttpClient client = newClient();
+            if (HttpResponseType.STRING.equals(responseType)) {
+                HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) strResponse.body();
+            } else if (HttpResponseType.JSONDATA.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonObject(jsonResponse.body());
+            } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonArray(jsonResponse.body());
+            } else if (HttpResponseType.BINARY.equals(responseType)) {
+                HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+                return (T) response.body();
+            }
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
         }
         return null;
     }
@@ -204,7 +221,7 @@ public class HttpClient{
      * @param headers Headers passed with the request
      * @return Response
      */
-    public <T> T put(String url, JsonObject body, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception{
+    public <T> T put(String url, JsonObject body, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
         return (T) put(url, body.toString(), headers, responseType);
     }
 
@@ -217,7 +234,7 @@ public class HttpClient{
      */
 
     
-    public <T> T put(String url, Map<String, String> parameters, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
+    public <T> T put(String url, Map<String, String> parameters, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
         String body = parameters.entrySet()
                 .stream()
                 .filter(e -> e.getKey()!=null)
@@ -233,23 +250,27 @@ public class HttpClient{
      * @param body Request body
      * @param headers Headers passed with the request
      * @return Response
-     * @throws Exception
+     * @throws ProcessException
      */
-    public <T> T put(String url, byte[] body, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
-        HttpRequest request = buildRequest(url, headers).PUT(HttpRequest.BodyPublishers.ofByteArray(body)).build();
-        java.net.http.HttpClient client = newClient();
-        if (HttpResponseType.STRING.equals(responseType)) {
-            HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) strResponse.body();
-        } else if (HttpResponseType.JSONDATA.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonObject(jsonResponse.body());
-        } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonArray(jsonResponse.body());
-        } else if (HttpResponseType.BINARY.equals(responseType)) {
-            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            return (T) response.body();
+    public <T> T put(String url, byte[] body, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
+        try {
+            HttpRequest request = buildRequest(url, headers).PUT(HttpRequest.BodyPublishers.ofByteArray(body)).build();
+            java.net.http.HttpClient client = newClient();
+            if (HttpResponseType.STRING.equals(responseType)) {
+                HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) strResponse.body();
+            } else if (HttpResponseType.JSONDATA.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonObject(jsonResponse.body());
+            } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonArray(jsonResponse.body());
+            } else if (HttpResponseType.BINARY.equals(responseType)) {
+                HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+                return (T) response.body();
+            }
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
         }
         return null;
     }
@@ -257,22 +278,26 @@ public class HttpClient{
     /**
      * @hidden
      */
-    private <T> T multipartPost(String url, HttpEntity entity, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
-        CloseableHttpClient client = HttpClients.createDefault();
-        RequestBuilder reqbuilder = RequestBuilder.post(url);
-        for(String key : headers.keySet()) {
-            reqbuilder.addHeader(new org.apache.http.message.BasicHeader(key, headers.get(key)));
-        }
-        reqbuilder.setEntity(entity);
-        CloseableHttpResponse response = client.execute(reqbuilder.build());
-        if (HttpResponseType.STRING.equals(responseType)) {
-            return (T) EntityUtils.toString(response.getEntity());
-        } else if (HttpResponseType.JSONDATA.equals(responseType)) {
-            return (T) new JsonObject(EntityUtils.toString(response.getEntity()));
-        } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
-            return (T) new JsonArray(EntityUtils.toString(response.getEntity()));
-        } else if (HttpResponseType.BINARY.equals(responseType)) {
-            return (T) EntityUtils.toByteArray(response.getEntity());
+    private <T> T multipartPost(String url, HttpEntity entity, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
+        try {
+            CloseableHttpClient client = HttpClients.createDefault();
+            RequestBuilder reqbuilder = RequestBuilder.post(url);
+            for (String key : headers.keySet()) {
+                reqbuilder.addHeader(new org.apache.http.message.BasicHeader(key, headers.get(key)));
+            }
+            reqbuilder.setEntity(entity);
+            CloseableHttpResponse response = client.execute(reqbuilder.build());
+            if (HttpResponseType.STRING.equals(responseType)) {
+                return (T) EntityUtils.toString(response.getEntity());
+            } else if (HttpResponseType.JSONDATA.equals(responseType)) {
+                return (T) new JsonObject(EntityUtils.toString(response.getEntity()));
+            } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
+                return (T) new JsonArray(EntityUtils.toString(response.getEntity()));
+            } else if (HttpResponseType.BINARY.equals(responseType)) {
+                return (T) EntityUtils.toByteArray(response.getEntity());
+            }
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
         }
         return null;
     }
@@ -285,7 +310,7 @@ public class HttpClient{
      * @param headers Headers passed with the request
      * @return Response
      */
-    public <T> T multipartPost(String url, com.veeva.vault.custom.app.model.files.File file, Map<String, String> body, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
+    public <T> T multipartPost(String url, com.veeva.vault.custom.app.model.files.File file, Map<String, String> body, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
         final MultipartEntityBuilder builder = MultipartEntityBuilder.create();
         builder.setMode(HttpMultipartMode.STRICT);
         File javaFile = new File(file.getAbsolutePath());
@@ -304,7 +329,7 @@ public class HttpClient{
      * @param headers Headers passed with the request
      * @return Response
      */
-    public <T> T multipartPost(String url, com.veeva.vault.custom.app.model.files.File file, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
+    public <T> T multipartPost(String url, com.veeva.vault.custom.app.model.files.File file, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
         final MultipartEntityBuilder builder = MultipartEntityBuilder.create();
         builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
         File javaFile = new File(file.getAbsolutePath());
@@ -319,21 +344,25 @@ public class HttpClient{
      * @param headers Headers passed with the request
      * @return Response
      */
-    public <T> T delete(String url, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
-        HttpRequest request = buildRequest(url, headers).DELETE().build();
-        java.net.http.HttpClient client = newClient();
-        if (HttpResponseType.STRING.equals(responseType)) {
-            HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) strResponse.body();
-        } else if (HttpResponseType.JSONDATA.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonObject(jsonResponse.body());
-        } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonArray(jsonResponse.body());
-        } else if (HttpResponseType.BINARY.equals(responseType)) {
-            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            return (T) response.body();
+    public <T> T delete(String url, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
+        try {
+            HttpRequest request = buildRequest(url, headers).DELETE().build();
+            java.net.http.HttpClient client = newClient();
+            if (HttpResponseType.STRING.equals(responseType)) {
+                HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) strResponse.body();
+            } else if (HttpResponseType.JSONDATA.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonObject(jsonResponse.body());
+            } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonArray(jsonResponse.body());
+            } else if (HttpResponseType.BINARY.equals(responseType)) {
+                HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+                return (T) response.body();
+            }
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
         }
         return null;
     }
@@ -346,21 +375,25 @@ public class HttpClient{
      * @return Response
      */
 
-    public <T> T delete(String url, String body, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
-        HttpRequest request = buildRequest(url, headers).method("DELETE", HttpRequest.BodyPublishers.ofString(body)).build();
-        java.net.http.HttpClient client = newClient();
-        if (HttpResponseType.STRING.equals(responseType)) {
-            HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) strResponse.body();
-        } else if (HttpResponseType.JSONDATA.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonObject(jsonResponse.body());
-        } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonArray(jsonResponse.body());
-        } else if (HttpResponseType.BINARY.equals(responseType)) {
-            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            return (T) response.body();
+    public <T> T delete(String url, String body, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
+        try {
+            HttpRequest request = buildRequest(url, headers).method("DELETE", HttpRequest.BodyPublishers.ofString(body)).build();
+            java.net.http.HttpClient client = newClient();
+            if (HttpResponseType.STRING.equals(responseType)) {
+                HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) strResponse.body();
+            } else if (HttpResponseType.JSONDATA.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonObject(jsonResponse.body());
+            } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonArray(jsonResponse.body());
+            } else if (HttpResponseType.BINARY.equals(responseType)) {
+                HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+                return (T) response.body();
+            }
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
         }
         return null;
     }
@@ -372,21 +405,25 @@ public class HttpClient{
      * @param headers Headers passed with the request
      * @return Response
      */
-    public <T> T delete(String url, byte[] body, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
-        HttpRequest request = buildRequest(url, headers).method("DELETE", HttpRequest.BodyPublishers.ofByteArray(body)).build();
-        java.net.http.HttpClient client = newClient();
-        if (HttpResponseType.STRING.equals(responseType)) {
-            HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) strResponse.body();
-        } else if (HttpResponseType.JSONDATA.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonObject(jsonResponse.body());
-        } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
-            HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return (T) new JsonArray(jsonResponse.body());
-        } else if (HttpResponseType.BINARY.equals(responseType)) {
-            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            return (T) response.body();
+    public <T> T delete(String url, byte[] body, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
+        try {
+            HttpRequest request = buildRequest(url, headers).method("DELETE", HttpRequest.BodyPublishers.ofByteArray(body)).build();
+            java.net.http.HttpClient client = newClient();
+            if (HttpResponseType.STRING.equals(responseType)) {
+                HttpResponse<String> strResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) strResponse.body();
+            } else if (HttpResponseType.JSONDATA.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonObject(jsonResponse.body());
+            } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
+                HttpResponse<String> jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return (T) new JsonArray(jsonResponse.body());
+            } else if (HttpResponseType.BINARY.equals(responseType)) {
+                HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+                return (T) response.body();
+            }
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
         }
         return null;
     }
@@ -398,25 +435,29 @@ public class HttpClient{
      * @param body Request body
      * @param headers Headers passed with the request
      * @return Response
-     * @throws Exception
+     * @throws ProcessException
      */
-    public <T> T patch(String url, String body, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
-        CloseableHttpClient client = HttpClients.createDefault();
-        HttpPatch httpPatch = new HttpPatch(url);
-        StringEntity params =new StringEntity(body);
-        httpPatch.setEntity(params);
-        for(String key : headers.keySet()) {
-            httpPatch.addHeader(key, headers.get(key));
-        }
-        CloseableHttpResponse response = client.execute(httpPatch);
-        if (HttpResponseType.STRING.equals(responseType)) {
-            return (T) EntityUtils.toString(response.getEntity());
-        } else if (HttpResponseType.JSONDATA.equals(responseType)) {
-            return (T) new JsonObject(EntityUtils.toString(response.getEntity()));
-        } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
-            return (T) new JsonArray(EntityUtils.toString(response.getEntity()));
-        } else if (HttpResponseType.BINARY.equals(responseType)) {
-            return (T) EntityUtils.toByteArray(response.getEntity());
+    public <T> T patch(String url, String body, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
+        try {
+            CloseableHttpClient client = HttpClients.createDefault();
+            HttpPatch httpPatch = new HttpPatch(url);
+            StringEntity params = new StringEntity(body);
+            httpPatch.setEntity(params);
+            for (String key : headers.keySet()) {
+                httpPatch.addHeader(key, headers.get(key));
+            }
+            CloseableHttpResponse response = client.execute(httpPatch);
+            if (HttpResponseType.STRING.equals(responseType)) {
+                return (T) EntityUtils.toString(response.getEntity());
+            } else if (HttpResponseType.JSONDATA.equals(responseType)) {
+                return (T) new JsonObject(EntityUtils.toString(response.getEntity()));
+            } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
+                return (T) new JsonArray(EntityUtils.toString(response.getEntity()));
+            } else if (HttpResponseType.BINARY.equals(responseType)) {
+                return (T) EntityUtils.toByteArray(response.getEntity());
+            }
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
         }
         return null;
     }
@@ -428,7 +469,7 @@ public class HttpClient{
      * @param headers Headers passed with the request
      * @return Response
      */
-    public <T> T patch(String url, JsonObject body, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception{
+    public <T> T patch(String url, JsonObject body, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
         return (T) patch(url, body.toString(), headers, responseType);
     }
 
@@ -439,25 +480,29 @@ public class HttpClient{
      * @param body Request body
      * @param headers Headers passed with the request
      * @return Response
-     * @throws Exception
+     * @throws ProcessException
      */
-    public <T> T patch(String url, byte[] body, Map<String, String> headers, HttpResponseType<T> responseType) throws Exception {
-        CloseableHttpClient client = HttpClients.createDefault();
-        HttpPatch httpPatch = new HttpPatch(url);
-        ByteArrayEntity params =new ByteArrayEntity(body);
-        httpPatch.setEntity(params);
-        for(String key : headers.keySet()) {
-            httpPatch.addHeader(key, headers.get(key));
-        }
-        CloseableHttpResponse response = client.execute(httpPatch);
-        if (HttpResponseType.STRING.equals(responseType)) {
-            return (T) EntityUtils.toString(response.getEntity());
-        } else if (HttpResponseType.JSONDATA.equals(responseType)) {
-            return (T) new JsonObject(EntityUtils.toString(response.getEntity()));
-        } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
-            return (T) new JsonArray(EntityUtils.toString(response.getEntity()));
-        } else if (HttpResponseType.BINARY.equals(responseType)) {
-            return (T) EntityUtils.toByteArray(response.getEntity());
+    public <T> T patch(String url, byte[] body, Map<String, String> headers, HttpResponseType<T> responseType) throws ProcessException {
+        try {
+            CloseableHttpClient client = HttpClients.createDefault();
+            HttpPatch httpPatch = new HttpPatch(url);
+            ByteArrayEntity params = new ByteArrayEntity(body);
+            httpPatch.setEntity(params);
+            for (String key : headers.keySet()) {
+                httpPatch.addHeader(key, headers.get(key));
+            }
+            CloseableHttpResponse response = client.execute(httpPatch);
+            if (HttpResponseType.STRING.equals(responseType)) {
+                return (T) EntityUtils.toString(response.getEntity());
+            } else if (HttpResponseType.JSONDATA.equals(responseType)) {
+                return (T) new JsonObject(EntityUtils.toString(response.getEntity()));
+            } else if (HttpResponseType.JSONARRAY.equals(responseType)) {
+                return (T) new JsonArray(EntityUtils.toString(response.getEntity()));
+            } else if (HttpResponseType.BINARY.equals(responseType)) {
+                return (T) EntityUtils.toByteArray(response.getEntity());
+            }
+        }catch(Exception e){
+            throw new ProcessException(e.getMessage());
         }
         return null;
     }

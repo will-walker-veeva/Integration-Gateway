@@ -288,7 +288,7 @@ public abstract class VaultRequest {
 			List<APIResponseError> errors = ((VaultResponse) obj).getErrors();
 			if (errors != null) {
 				for (APIResponseError error : ((VaultResponse) obj).getErrors()) {
-					log.error("Vault Exception " + error.getType() + " " + error.getMessage());
+					log.error("Vault ProcessException " + error.getType() + " " + error.getMessage());
 				}
 			}
 		}

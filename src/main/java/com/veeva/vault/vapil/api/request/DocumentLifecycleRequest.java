@@ -429,7 +429,7 @@ public class DocumentLifecycleRequest extends VaultRequest {
 	 *   System.out.println("Successful ");
 	 *   }
 	 *
-	 * } catch (Exception e) {
+	 * } catch (ProcessException e) {
 	 * e.printStackTrace();
 	 * }</pre>
 	 */
@@ -471,7 +471,7 @@ public class DocumentLifecycleRequest extends VaultRequest {
 	 * if (updateOverrideRulesResponse.isSuccessful()) {
 	 *   System.out.println("Successful ");
 	 *   }
-	 * } catch (Exception e) {
+	 * } catch (ProcessException e) {
 	 * e.printStackTrace();
 	 * }</pre>
 	 */
@@ -522,7 +522,7 @@ public class DocumentLifecycleRequest extends VaultRequest {
 	 *     System.out.println("INVALID_DATA");
 	 *     }
 	 *   }
-	 * } catch (Exception e) {
+	 * } catch (ProcessException e) {
 	 * e.printStackTrace();
 	 * }
 	 * </pre>
@@ -537,7 +537,7 @@ public class DocumentLifecycleRequest extends VaultRequest {
 	 *     System.out.println("INVALID_DATA");
 	 *     }
 	 *   }
-	 * } catch (Exception e) {
+	 * } catch (ProcessException e) {
 	 * e.printStackTrace();
 	 * }</pre>
 	 */

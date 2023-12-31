@@ -1,11 +1,12 @@
 package com.veeva.vault.custom.app.client;
 
+import com.veeva.vault.custom.app.exception.ProcessException;
 import com.veeva.vault.custom.app.model.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 public class JsonTest {
     @Test
-    public void JsonModelTest() throws Exception{
+    public void JsonModelTest() throws ProcessException {
         Client client = new Client();
         JsonClient jsonClient = client.json();
         JsonObject subObject = new JsonObject();

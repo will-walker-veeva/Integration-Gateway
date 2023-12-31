@@ -1,6 +1,8 @@
 package com.veeva.vault.custom.app.client;
 
 import com.veeva.vault.custom.app.admin.CacheContext;
+import com.veeva.vault.custom.app.exception.AuthenticationException;
+import com.veeva.vault.custom.app.exception.ProcessException;
 import com.veeva.vault.custom.app.admin.Log;
 import com.veeva.vault.custom.app.model.files.File;
 import com.veeva.vault.custom.app.repository.ContextRepository;
@@ -8,7 +10,6 @@ import com.veeva.vault.vapil.api.client.VaultClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.security.sasl.AuthenticationException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -126,6 +127,14 @@ public class Client {
     }
 
     /**
+     * Returns an initialised CsvClient for CSV operations
+     * @return CsvClient
+     */
+    public CsvClient csv(){
+        return new CsvClient();
+    }
+
+    /**
      * @hide
      * @param file
      */
@@ -180,9 +189,9 @@ public class Client {
      * Sets a given key's value into the Cache Context for a given Vault DNS. VAPIL must be authenticated to access the Cache Context.
      * @param key
      * @param value
-     * @throws Exception
+     * @throws ProcessException
      */
-    public void setCacheContextValue(String key, Object value) throws Exception{
+    public void setCacheContextValue(String key, Object value) throws AuthenticationException {
         if(this.vaultClient.getAuthenticationResponse().isSuccessful()){
             CacheContext context = contextRepository.findById(this.vaultClient.getVaultDNS()).orElse(new CacheContext(this.vaultClient.getVaultDNS()));
             context.put(key, value);
@@ -198,9 +207,9 @@ public class Client {
      * @param className
      * @return
      * @param <T>
-     * @throws Exception
+     * @throws ProcessException
      */
-    public <T> T getCacheContextValue(String key, Class<T> className) throws Exception{
+    public <T> T getCacheContextValue(String key, Class<T> className) throws AuthenticationException {
         if(this.vaultClient.getAuthenticationResponse().isSuccessful()){
             CacheContext context = contextRepository.findById(this.vaultClient.getVaultDNS()).orElse(new CacheContext(this.vaultClient.getVaultDNS()));
             return (T) context.get(key);

@@ -1,6 +1,6 @@
 package com.veeva.vault.custom.app.client;
 
-import groovy.lang.GroovyShell;
+import com.veeva.vault.custom.app.exception.ProcessException;
 import org.apache.commons.io.IOUtils;
 
 import java.io.FileInputStream;
@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ScriptUtilsTest {
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
         ScriptExecutionUtils scriptExecutionUtils = new ScriptExecutionUtils();
         Map<String, String> scripts = new HashMap<String, String>();
         scripts.put("com.veeva.vault.custom.app.client.MyModel", IOUtils.toString(new FileInputStream("src/test/java/com/veeva/vault/custom/app/client/MyModel.java"), StandardCharsets.UTF_8));
