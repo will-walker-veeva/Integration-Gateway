@@ -1,5 +1,6 @@
 package com.veeva.vault.custom.app.client;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.cfg.MapperConfig;
@@ -228,6 +229,16 @@ public class XmlClient {
         }
 
         @Override
+        public JsonInclude.Value findPropertyInclusion(Annotated a){
+            XmlProperty property = a.getAnnotation(XmlProperty.class);
+            if (property != null && Arrays.stream(property.options()).anyMatch(xmlPropertyOption -> xmlPropertyOption == XmlPropertyOption.IGNORE_NULL)){
+                return JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL);
+            }else {
+                return JsonInclude.Value.construct(JsonInclude.Include.ALWAYS, JsonInclude.Include.ALWAYS);
+            }
+        }
+
+        @Override
         public String[] findSerializationPropertyOrder(AnnotatedClass ac){
             List<String> fields = new ArrayList<String>();
             StreamSupport.stream(ac.fields().spliterator(), false)
@@ -311,9 +322,16 @@ public class XmlClient {
 
         @Override
         public boolean hasIgnoreMarker(AnnotatedMember m) {
-            return m instanceof AnnotatedField
-                    && m.getAnnotation(XmlProperty.class) == null
-                    && m.getAnnotation(XmlAttribute.class) == null;
+            if(m instanceof AnnotatedField){
+                XmlProperty property = m.getAnnotation(XmlProperty.class);
+                XmlAttribute attribute = m.getAnnotation(XmlAttribute.class);
+                if(property!=null && Arrays.stream(property.options()).anyMatch(xmlPropertyOption -> xmlPropertyOption == XmlPropertyOption.IGNORE_ALL)){
+                    return true;
+                }else if(property==null && attribute==null){
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

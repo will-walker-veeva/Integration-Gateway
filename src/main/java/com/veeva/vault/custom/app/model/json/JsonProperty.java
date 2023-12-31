@@ -10,5 +10,5 @@ import java.lang.annotation.Target;
 public @interface JsonProperty {
     public String key();
     public String[] aliases() default {""};
-    public boolean insertNull() default false;
+    public JsonPropertyOption[] options() default {};
 }

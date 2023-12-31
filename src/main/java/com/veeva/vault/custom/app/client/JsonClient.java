@@ -1,5 +1,6 @@
 package com.veeva.vault.custom.app.client;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
@@ -12,6 +13,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.veeva.vault.custom.app.model.json.JsonProperty;
 import com.veeva.vault.custom.app.model.json.JsonModel;
+import com.veeva.vault.custom.app.model.json.JsonPropertyOption;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -76,6 +78,16 @@ public class JsonClient {
         }
 
         @Override
+        public JsonInclude.Value findPropertyInclusion(Annotated a){
+            JsonProperty property = a.getAnnotation(JsonProperty.class);
+            if (property != null && Arrays.stream(property.options()).anyMatch(jsonPropertyOption -> jsonPropertyOption == JsonPropertyOption.IGNORE_NULL)){
+                return JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL);
+            }else {
+                return JsonInclude.Value.construct(JsonInclude.Include.ALWAYS, JsonInclude.Include.ALWAYS);
+            }
+        }
+
+        @Override
         public List<PropertyName> findPropertyAliases(Annotated m){
             JsonProperty property = m.getAnnotation(JsonProperty.class);
             if (property == null) {
@@ -91,8 +103,33 @@ public class JsonClient {
 
         @Override
         public boolean hasIgnoreMarker(AnnotatedMember m) {
-            return m instanceof AnnotatedField
-                    && m.getAnnotation(JsonProperty.class) == null;
+            if(m instanceof AnnotatedField){
+                JsonProperty property = m.getAnnotation(JsonProperty.class);
+                if(property!=null && Arrays.stream(property.options()).anyMatch(jsonPropertyOption -> jsonPropertyOption == JsonPropertyOption.IGNORE_ALL)){
+                    return true;
+                }else if(property==null){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public Boolean hasAnyGetter(Annotated a){
+            JsonProperty property = a.getAnnotation(JsonProperty.class);
+            if(property!=null && Arrays.stream(property.options()).anyMatch(jsonPropertyOption -> jsonPropertyOption == JsonPropertyOption.ANY_GETTER)){
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public Boolean hasAnySetter(Annotated a){
+            JsonProperty property = a.getAnnotation(JsonProperty.class);
+            if(property!=null && Arrays.stream(property.options()).anyMatch(jsonPropertyOption -> jsonPropertyOption == JsonPropertyOption.ANY_SETTER)){
+                return true;
+            }
+            return false;
         }
 
     }
