@@ -1,14 +1,14 @@
 package com.veeva.vault.custom.app.model.xml;
 
-public class XMLComment implements XMLElement {
+public class XmlComment implements XmlElement {
     private String xPath;
     private String text;
 
-    public XMLComment(String text){
+    public XmlComment(String text){
         this.text = text;
     }
 
-    public XMLComment(String xPath, String text){
+    public XmlComment(String xPath, String text){
         this.xPath = xPath;
         this.text = text;
     }
@@ -38,17 +38,17 @@ public class XMLComment implements XMLElement {
     }
 
     @Override
-    public XMLComment asComment() {
+    public XmlComment asComment() {
         return this;
     }
 
     @Override
-    public XMLStart asStartElement() {
+    public XmlStart asStartElement() {
         return null;
     }
 
     @Override
-    public XMLEnd asEndElement() {
+    public XmlEnd asEndElement() {
         return null;
     }
 }

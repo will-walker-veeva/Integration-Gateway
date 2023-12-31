@@ -1,16 +1,16 @@
 package com.veeva.vault.custom.app.model.xml;
 
-public class XMLEnd implements XMLElement {
+public class XmlEnd implements XmlElement {
     private String xPath;
     private String name;
     private String characters;
 
-    public XMLEnd(String name, String characters) {
+    public XmlEnd(String name, String characters) {
         this.characters = characters;
         this.name=name;
     }
 
-    public XMLEnd(String xPath, String name, String characters) {
+    public XmlEnd(String xPath, String name, String characters) {
         this.xPath = xPath;
         this.name=name;
         this.characters = characters;
@@ -37,17 +37,17 @@ public class XMLEnd implements XMLElement {
     }
 
     @Override
-    public XMLComment asComment() {
+    public XmlComment asComment() {
         return null;
     }
 
     @Override
-    public XMLStart asStartElement() {
+    public XmlStart asStartElement() {
         return null;
     }
 
     @Override
-    public XMLEnd asEndElement() {
+    public XmlEnd asEndElement() {
         return this;
     }
 

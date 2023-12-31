@@ -1,6 +1,6 @@
 package com.veeva.vault.custom.app.model.xml;
 
-public interface XMLElement {
+public interface XmlElement {
     String getXPath();
     boolean isComment();
 
@@ -8,11 +8,11 @@ public interface XMLElement {
 
     boolean isEndElement();
 
-    XMLComment asComment();
+    XmlComment asComment();
 
-    XMLStart asStartElement();
+    XmlStart asStartElement();
 
-    XMLEnd asEndElement();
+    XmlEnd asEndElement();
 
     String toString();
 }

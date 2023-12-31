@@ -6,23 +6,23 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class XMLStart implements XMLElement {
+public class XmlStart implements XmlElement {
     private String xPath;
     private String name;
     private Map<String, String> attributes;
     private Iterator<Namespace> namespaces = null;
     private QName qname = null;
 
-    public XMLStart(String name){
+    public XmlStart(String name){
         this.name = name;
     }
 
-    public XMLStart(String name, Map<String, String> attributes) {
+    public XmlStart(String name, Map<String, String> attributes) {
         this.name = name;
         this.attributes = attributes;
     }
 
-    public XMLStart(String xPath, String name, Map<String, String> attributes) {
+    public XmlStart(String xPath, String name, Map<String, String> attributes) {
         this.xPath = xPath;
         this.name = name;
         this.attributes = attributes;
@@ -49,17 +49,17 @@ public class XMLStart implements XMLElement {
     }
 
     @Override
-    public XMLComment asComment() {
+    public XmlComment asComment() {
         return null;
     }
 
     @Override
-    public XMLStart asStartElement() {
+    public XmlStart asStartElement() {
         return this;
     }
 
     @Override
-    public XMLEnd asEndElement() {
+    public XmlEnd asEndElement() {
         return null;
     }
 

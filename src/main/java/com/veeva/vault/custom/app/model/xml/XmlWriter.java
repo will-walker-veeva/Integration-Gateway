@@ -6,7 +6,7 @@ import javax.xml.stream.events.*;
 import java.io.OutputStream;
 import java.util.*;
 
-public class XMLWriter implements AutoCloseable{
+public class XmlWriter implements AutoCloseable{
     private XMLOutputFactory xmlOutputFactory = XMLOutputFactory.newInstance();
 
     private XMLEventWriter xmlEventWriter = null;
@@ -14,20 +14,20 @@ public class XMLWriter implements AutoCloseable{
     private Map<String,String> qNameToprefixMap;
     private List<Namespace> namespacesList = new ArrayList<Namespace>();
 
-    public XMLWriter(OutputStream outputStream, XMLReader reader) throws Exception{
+    public XmlWriter(OutputStream outputStream, XmlReader reader) throws Exception{
         xmlEventWriter = xmlOutputFactory.createXMLEventWriter(outputStream);
         reader.initiate();
         if(reader.getEncoding()!=null) xmlEventWriter.add(eventFactory.createStartDocument(reader.getEncoding(), reader.getVersion()));
         if(reader.getDTD()!=null) xmlEventWriter.add(eventFactory.createDTD(reader.getDTD()));
     }
 
-    public XMLWriter(OutputStream outputStream, String encoding, String version, String dtd) throws Exception{
+    public XmlWriter(OutputStream outputStream, String encoding, String version, String dtd) throws Exception{
         xmlEventWriter = xmlOutputFactory.createXMLEventWriter(outputStream);
         if(encoding!=null) xmlEventWriter.add(eventFactory.createStartDocument(encoding, version));
         if(dtd!=null) xmlEventWriter.add(eventFactory.createDTD(dtd));
     }
 
-    public void add(XMLElement xmlElement) throws Exception {
+    public void add(XmlElement xmlElement) throws Exception {
         try {
             if (xmlElement.isStartElement()) {
                 StartElement startElement;
@@ -77,9 +77,9 @@ public class XMLWriter implements AutoCloseable{
 
     }
 
-    public void add(XMLReader xmlReader) throws Exception {
+    public void add(XmlReader xmlReader) throws Exception {
         while (xmlReader.hasNext()) {
-            XMLElement next = xmlReader.getNext();
+            XmlElement next = xmlReader.getNext();
             add(next);
         }
     }

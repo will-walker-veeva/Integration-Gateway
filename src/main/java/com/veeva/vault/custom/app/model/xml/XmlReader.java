@@ -5,16 +5,16 @@ import javax.xml.stream.events.*;
 import java.io.InputStream;
 import java.util.*;
 
-public class XMLReader {
+public class XmlReader {
     private XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
     private String dtd = null;
     private String encoding = null;
     private String version = null;
     private XMLEventReader reader = null;
     private LinkedList<String> startingXPathList = new LinkedList<>();
-    private XMLElement previousEvent;
+    private XmlElement previousEvent;
     private String characters;
-    public XMLReader(InputStream inputStream) throws Exception{
+    public XmlReader(InputStream inputStream) throws Exception{
         this.reader = xmlInputFactory.createXMLEventReader(inputStream);
     }
 
@@ -26,9 +26,9 @@ public class XMLReader {
         return this.reader.hasNext();
     }
 
-    public XMLElement getNext() throws Exception{
+    public XmlElement getNext() throws Exception{
         XMLEvent event = this.reader.nextEvent();
-        XMLElement response = null;
+        XmlElement response = null;
         String xPATH = null;
         if(event.isStartElement()){
             StartElement startElement = event.asStartElement();
@@ -40,7 +40,7 @@ public class XMLReader {
             }
             startingXPathList.addLast(startElement.getName().getLocalPart());
             xPATH = "/" + String.join("/", startingXPathList);
-            XMLStart startResponse = new XMLStart(xPATH, startElement.getName().getLocalPart(), attributeMap);
+            XmlStart startResponse = new XmlStart(xPATH, startElement.getName().getLocalPart(), attributeMap);
             startResponse.setQName(startElement.getName());
             startResponse.setNamespaces(startResponse.getNamespaces());
             response = startResponse;
@@ -55,14 +55,14 @@ public class XMLReader {
                 return getNext();
             }
             xPATH = "/" + String.join("/", startingXPathList);
-            response = new XMLComment(xPATH, characters);
+            response = new XmlComment(xPATH, characters);
         }else if(event.isEndElement()){
             xPATH = "/" + String.join("/", startingXPathList);
             startingXPathList.removeLast();
-            response = new XMLEnd(xPATH, event.asEndElement().getName().getLocalPart(), characters);
+            response = new XmlEnd(xPATH, event.asEndElement().getName().getLocalPart(), characters);
         }else if (event.getEventType() == XMLEvent.COMMENT &&  ((javax.xml.stream.events.Comment) event).getText()!=null){
             xPATH = "/" + String.join("/", startingXPathList);
-            response = new XMLComment(xPATH, ((javax.xml.stream.events.Comment) event).getText());
+            response = new XmlComment(xPATH, ((javax.xml.stream.events.Comment) event).getText());
         }
         if(response==null){
             return getNext();

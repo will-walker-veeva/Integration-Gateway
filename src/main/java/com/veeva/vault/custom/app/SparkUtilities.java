@@ -1,6 +1,7 @@
 package com.veeva.vault.custom.app;
 
 import com.veeva.vault.custom.app.client.*;
+import com.veeva.vault.custom.app.model.http.HttpResponseType;
 
 import java.security.*;
 import java.util.*;
@@ -27,7 +28,7 @@ public class SparkUtilities {
         headers.put("Accept", "application/json");
         headers.put("X-VaultAPI-ClientID", VAULT_CLIENT_ID);
         headers.put("Authorization", sessionId);
-        byte[] response = HttpClient.newInstance().get(url, headers, byte[].class);
+        byte[] response = HttpClient.newInstance().get(url, headers, HttpResponseType.BINARY);
         return response;
     }
 
