@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.veeva.vault.custom.app.exception.ProcessException;
+import com.veeva.vault.custom.app.model.core.AnyGetter;
+import com.veeva.vault.custom.app.model.core.AnySetter;
 import com.veeva.vault.custom.app.model.files.File;
 import com.veeva.vault.custom.app.model.json.JsonObject;
 import com.veeva.vault.custom.app.model.json.JsonProperty;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,7 +70,7 @@ public class JsonClient {
 
     }
 
-    public <T extends JsonModel> String serializeObjects(List<T> models) throws ProcessException {
+    public <T extends JsonModel> String serializeObjects(Collection<T> models) throws ProcessException {
         try{
             return objectMapper.writeValueAsString(models);
         }catch(Exception e){
@@ -145,11 +148,8 @@ public class JsonClient {
 
         @Override
         public Boolean hasAnyGetter(Annotated a){
-            JsonProperty property = a.getAnnotation(JsonProperty.class);
-            JsonAnyGetter anyGetter = a.getAnnotation(JsonAnyGetter.class);
-            if(property!=null && Arrays.stream(property.options()).anyMatch(jsonPropertyOption -> jsonPropertyOption == JsonPropertyOption.ANY_GETTER)){
-                return true;
-            }else if(anyGetter!=null){
+            AnyGetter property = a.getAnnotation(AnyGetter.class);
+            if(property!=null){
                 return true;
             }
             return false;
@@ -157,11 +157,8 @@ public class JsonClient {
 
         @Override
         public Boolean hasAnySetter(Annotated a){
-            JsonProperty property = a.getAnnotation(JsonProperty.class);
-            JsonAnySetter anySetter = a.getAnnotation(JsonAnySetter.class);
-            if(property!=null && Arrays.stream(property.options()).anyMatch(jsonPropertyOption -> jsonPropertyOption == JsonPropertyOption.ANY_SETTER)){
-                return true;
-            }else if(anySetter!=null){
+            AnySetter property = a.getAnnotation(AnySetter.class);
+            if(property!=null){
                 return true;
             }
             return false;

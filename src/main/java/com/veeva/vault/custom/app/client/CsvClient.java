@@ -13,12 +13,18 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.veeva.vault.custom.app.exception.ProcessException;
+import com.veeva.vault.custom.app.model.core.AnyGetter;
+import com.veeva.vault.custom.app.model.core.AnySetter;
 import com.veeva.vault.custom.app.model.csv.CsvModel;
 import com.veeva.vault.custom.app.model.csv.CsvProperty;
 import com.veeva.vault.custom.app.model.csv.CsvPropertyOption;
+import com.veeva.vault.custom.app.model.files.File;
+import com.veeva.vault.custom.app.model.json.JsonArray;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,22 +54,27 @@ public class CsvClient {
         }
     }
 
-    public <T extends CsvModel> String serializeObjects(List<T> models) throws ProcessException {
-        CsvSchema.Builder csvSchemaBuilder = CsvSchema.builder();
-        Class<T> classModel = (Class<T>) models.get(0).getClass();
-        Arrays.stream(classModel.getFields())
-                .filter(field -> field.getAnnotation(CsvProperty.class)!=null)
-                .map(field -> field.getAnnotation(CsvProperty.class))
-                .map(field -> field.key())
-                .sorted(Comparator.comparing(el -> el))
-                .forEach(field -> csvSchemaBuilder.addColumn(field));
-        CsvSchema csvSchema = csvSchemaBuilder.build().withHeader();
-        JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, classModel);
-        try {
+    public <T extends CsvModel> String serializeObjects(Collection<T> models) throws ProcessException {
+        try{
+            CsvSchema.Builder csvSchemaBuilder = CsvSchema.builder();
+            Class<T> classModel = (Class<T>) models.stream().findFirst().get().getClass();
+            Arrays.stream(classModel.getFields())
+                    .filter(field -> field.getAnnotation(CsvProperty.class)!=null)
+                    .map(field -> field.getAnnotation(CsvProperty.class))
+                    .map(field -> field.key())
+                    .sorted(Comparator.comparing(el -> el))
+                    .forEach(field -> csvSchemaBuilder.addColumn(field));
+            CsvSchema csvSchema = csvSchemaBuilder.build().withHeader();
+            JavaType type = objectMapper.getTypeFactory().constructCollectionType(models.getClass(), classModel);
             return objectMapper.writerFor(type).with(csvSchema).writeValueAsString(models);
         }catch(Exception e){
             throw new ProcessException(e.getMessage());
         }
+    }
+
+    public JsonArray readFile(File file, Charset charset) throws ProcessException {
+        String csvString = filesClient.readFileToString(file, charset);
+        return JsonArray.ofCsvString(csvString);
     }
 
     private static class CsvAnnotationIntrospector extends JacksonAnnotationIntrospector {
@@ -122,8 +133,8 @@ public class CsvClient {
 
         @Override
         public Boolean hasAnyGetter(Annotated a){
-            CsvProperty property = a.getAnnotation(CsvProperty.class);
-            if(property!=null && Arrays.stream(property.options()).anyMatch(csvPropertyOption -> csvPropertyOption == CsvPropertyOption.ANY_GETTER)){
+            AnyGetter property = a.getAnnotation(AnyGetter.class);
+            if(property!=null){
                 return true;
             }
             return false;
@@ -131,8 +142,8 @@ public class CsvClient {
 
         @Override
         public Boolean hasAnySetter(Annotated a){
-            CsvProperty property = a.getAnnotation(CsvProperty.class);
-            if(property!=null && Arrays.stream(property.options()).anyMatch(csvPropertyOption -> csvPropertyOption == CsvPropertyOption.ANY_SETTER)){
+            AnySetter property = a.getAnnotation(AnySetter.class);
+            if(property!=null){
                 return true;
             }
             return false;

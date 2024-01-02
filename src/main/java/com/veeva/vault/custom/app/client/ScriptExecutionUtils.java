@@ -1,5 +1,9 @@
 package com.veeva.vault.custom.app.client;
 
+import com.thoughtworks.qdox.JavaDocBuilder;
+import com.thoughtworks.qdox.model.JavaClass;
+import com.thoughtworks.qdox.model.JavaSource;
+import com.thoughtworks.qdox.model.Type;
 import com.veeva.vault.custom.app.admin.AppConfiguration;
 import com.veeva.vault.custom.app.exception.ProcessException;
 import com.veeva.vault.custom.app.admin.Processor;
@@ -20,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,17 +56,17 @@ public class ScriptExecutionUtils {
             "java.lang.*", "java.time.*", "java.time.format.*", "java.math.*",
             "java.nio.charset.*", "java.time.temporal.*", "java.time.zone.*", "java.time.chrono.*",
             "java.util.regex.*", "java.util.stream.*", "java.text.*",
-            "com.veeva.vault.custom.app.model.csv.*", "com.veeva.vault.custom.app.model.files.*",
-            "com.veeva.vault.custom.app.model.json.*", "com.veeva.vault.custom.app.model.http.*",
+            "com.veeva.vault.custom.app.model.core.*", "com.veeva.vault.custom.app.model.csv.*", "com.veeva.vault.custom.app.model.files.*",
+            "com.veeva.vault.custom.app.model.json.*", "com.veeva.vault.custom.app.model.query.*", "com.veeva.vault.custom.app.model.http.*",
             "com.veeva.vault.vapil.*", "com.veeva.vault.vapil.api.*", "com.veeva.vault.vapil.api.client.*",
             "com.veeva.vault.vapil.api.model.*", "com.veeva.vault.vapil.api.model.builder.*",
             "com.veeva.vault.vapil.api.model.common.*", "com.veeva.vault.vapil.api.model.metadata.*",
             "com.veeva.vault.vapil.api.model.response.*", "com.veeva.vault.vapil.api.request.*",
-            "com.veeva.vault.vapil.api.connector.*");
+            "com.veeva.vault.vapil.api.connector.*",
+            "jakarta.persistence.*", "org.hibernate.annotations.*");
+    public static final List<String> ALLOWED_LIST = Arrays.asList("com.veeva.vault.custom.app.client.Client", "com.veeva.vault.custom.app.client.Emaillient", "com.veeva.vault.custom.app.client.EncryptionClient", "com.veeva.vault.custom.app.client.FilesClient", "com.veeva.vault.custom.app.client.HttpClient", "com.veeva.vault.custom.app.client.JsonClient", "com.veeva.vault.custom.app.client.QueryClient", "com.veeva.vault.custom.app.client.Logger", "com.veeva.vault.custom.app.client.TemplateProcessorClient", "com.veeva.vault.custom.app.client.XmlClient", "org.hibernate.type.SqlTypes" );
 
-    public static final List<String> ALLOWED_LIST = Arrays.asList("com.veeva.vault.custom.app.client.Client", "com.veeva.vault.custom.app.client.Emaillient", "com.veeva.vault.custom.app.client.EncryptionClient", "com.veeva.vault.custom.app.client.FilesClient", "com.veeva.vault.custom.app.client.HttpClient", "com.veeva.vault.custom.app.client.JsonClient", "com.veeva.vault.custom.app.client.Logger", "com.veeva.vault.custom.app.client.TemplateProcessorClient", "com.veeva.vault.custom.app.client.XmlClient" );
-
-    private static final String[] AUTO_LIST = {"java.util", "java.lang", "java.time", "java.math", "java.time.format",  "com.veeva.vault.custom.app.model.csv",  "com.veeva.vault.custom.app.model.files",  "com.veeva.vault.custom.app.model.json",  "com.veeva.vault.custom.app.model.http", "com.veeva.vault.vapil.api.client", "com.veeva.vault.vapil.api.request"};
+    private static final String[] AUTO_LIST = {"java.util", "java.lang", "java.time", "java.math", "java.time.format",  "com.veeva.vault.custom.app.model.core", "com.veeva.vault.custom.app.model.csv",  "com.veeva.vault.custom.app.model.files",  "com.veeva.vault.custom.app.model.json",  "com.veeva.vault.custom.app.model.http", "com.veeva.vault.vapil.api.client", "com.veeva.vault.vapil.api.request"};
 
     @Autowired
     public void init() {
@@ -268,6 +273,19 @@ public class ScriptExecutionUtils {
                 logger.debug("Loaded classes are {}", Arrays.stream(scriptEngine.getGroovyClassLoader().getLoadedClasses()).map(className -> className.getName()).collect(Collectors.toSet()));
             }
             Script myScript = shell.parse(script);
+            /*
+            try {
+                JavaDocBuilder builder = new JavaDocBuilder();
+                JavaSource src = builder.addSource(new StringReader(script));
+                JavaClass javaClass = src.getClasses()[0];
+                Type superclass = javaClass.getSuperClass();
+                if(superclass.toString().equals("com.veeva.vault.custom.app.model.query.QueryModel")){
+                    String[] source = {script};
+                    com.sun.tools.javac.Main.compile(source);
+                }
+            }catch(Exception e){
+                e.printStackTrace();
+            }*/
         }catch(Exception e){
             e.printStackTrace();
             response = new ScriptValidationResponse(false, e.getMessage());

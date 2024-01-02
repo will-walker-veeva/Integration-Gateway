@@ -27,14 +27,15 @@ public class Client {
     private EncryptionClient encryptionClient;
     @Autowired
     private EmailClient emailClient;
-
+    //@Autowired
+    //private QueryClient queryClient;
     @Autowired
     private ContextRepository contextRepository;
 
     /**
      * @hidden
      */
-    protected Client(){
+    public Client(){
 
     }
 
@@ -56,8 +57,11 @@ public class Client {
      */
     public Client(Client autowiredClient, String requestProcessorId, String vaultDns, String vaultSessionId){
         this.requestProcessorId = requestProcessorId;
-        this.encryptionClient = autowiredClient.encryptionClient;
-        this.emailClient = autowiredClient.emailClient;
+        if(autowiredClient!=null) {
+            this.encryptionClient = autowiredClient.encryptionClient;
+            this.emailClient = autowiredClient.emailClient;
+            //this.queryClient = autowiredClient.queryClient;
+        }
         if(vaultDns!=null&&vaultSessionId!=null)
             this.vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(vaultDns).withVaultSessionId(vaultSessionId).withVaultClientId(VAULT_CLIENT_ID).withValidation(true).withApiErrorLogging(true).withHttpTimeout(120).build();
     }
@@ -101,6 +105,9 @@ public class Client {
     public EncryptionClient encryption(){
         return this.encryptionClient;
     }
+    /*public QueryClient query(){
+        return this.queryClient;
+    }*/
 
     /**
      * Returns an initialised Email Client for Email operations

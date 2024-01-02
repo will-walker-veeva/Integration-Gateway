@@ -1,10 +1,18 @@
 package com.veeva.vault.custom.app.model.json;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-
+import com.veeva.vault.custom.app.model.core.AnyGetter;
+import com.veeva.vault.custom.app.model.core.AnySetter;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
-public class JsonObject {
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+
+public class JsonObject implements Map<String, Object> {
+    @AnyGetter
+    @AnySetter
     private JSONObject jsonObject = new JSONObject();
     public JsonObject(){
 
@@ -30,8 +38,67 @@ public class JsonObject {
         this.jsonObject.put(key, new JSONArray(jsonArray.toString()));
     }
 
-    public void put(String key, Object object){
+    @Override
+    public int size() {
+        return this.jsonObject.toMap().size();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return this.jsonObject.isEmpty();
+    }
+
+    @Override
+    public boolean containsKey(Object key) {
+        return this.jsonObject.has((String)key);
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        return this.jsonObject.toMap().containsValue(value);
+    }
+
+    @Override
+    public Object get(Object key) {
+        return this.jsonObject.get((String) key);
+    }
+
+    public Object put(String key, Object object){
         this.jsonObject.put(key, object);
+        return object;
+    }
+
+    @Override
+    public Object remove(Object key) {
+        return this.jsonObject.remove((String)key);
+    }
+
+    @Override
+    public void putAll(@NotNull Map<? extends String, ?> m) {
+        m.entrySet().forEach(entry -> put(entry.getKey(), entry.getValue()));
+    }
+
+    @Override
+    public void clear() {
+        this.jsonObject.clear();
+    }
+
+    @NotNull
+    @Override
+    public Set<String> keySet() {
+        return this.jsonObject.keySet();
+    }
+
+    @NotNull
+    @Override
+    public Collection<Object> values() {
+        return this.jsonObject.toMap().values();
+    }
+
+    @NotNull
+    @Override
+    public Set<Entry<String, Object>> entrySet() {
+        return this.jsonObject.toMap().entrySet();
     }
 
     public void put(String key, Integer object){
@@ -54,7 +121,6 @@ public class JsonObject {
         this.jsonObject.put(key, object);
     }
 
-    @JsonAnySetter
     public void put(String key, String object){
         this.jsonObject.put(key, object);
     }

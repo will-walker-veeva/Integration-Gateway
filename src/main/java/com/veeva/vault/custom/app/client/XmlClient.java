@@ -9,6 +9,8 @@ import com.fasterxml.jackson.dataformat.xml.JacksonXmlAnnotationIntrospector;
 import com.fasterxml.jackson.dataformat.xml.XmlFactory;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.veeva.vault.custom.app.exception.ProcessException;
+import com.veeva.vault.custom.app.model.core.AnyGetter;
+import com.veeva.vault.custom.app.model.core.AnySetter;
 import com.veeva.vault.custom.app.model.xml.*;
 import com.veeva.vault.custom.app.model.xml.XmlReader;
 import org.springframework.stereotype.Service;
@@ -232,6 +234,24 @@ public class XmlClient {
                 }else if(property==null && attribute==null){
                     return true;
                 }
+            }
+            return false;
+        }
+
+        @Override
+        public Boolean hasAnyGetter(Annotated a){
+            AnyGetter property = a.getAnnotation(AnyGetter.class);
+            if(property!=null){
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public Boolean hasAnySetter(Annotated a){
+            AnySetter property = a.getAnnotation(AnySetter.class);
+            if(property!=null){
+                return true;
             }
             return false;
         }

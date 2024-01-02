@@ -21,6 +21,7 @@ public class XmlTest {
         System.out.println(xmlString);
         MyModel regenModel = client.xml().deserializeObject(xmlString, MyModel.class);
         System.out.println(regenModel.code);
+        System.out.println(client.xml().serializeObject(regenModel));
     }
 
 }
