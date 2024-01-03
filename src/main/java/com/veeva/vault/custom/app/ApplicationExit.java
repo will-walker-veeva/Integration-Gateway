@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veeva.vault.custom.app.admin.Processor;
 import com.veeva.vault.custom.app.admin.Session;
 import com.veeva.vault.custom.app.client.Logger;
-import com.veeva.vault.custom.app.repository.VaultConfigurationRepository;
+import com.veeva.vault.custom.app.repository.VaultProcessorRepository;
 import com.veeva.vault.custom.app.repository.VaultSessionRepository;
 
 import jakarta.annotation.PreDestroy;
@@ -23,7 +23,7 @@ import java.util.stream.StreamSupport;
 @Component
 public class ApplicationExit {
     @Autowired
-    VaultConfigurationRepository configurationRepository;
+    VaultProcessorRepository configurationRepository;
 
     @Autowired
     VaultSessionRepository sessionRepository;
@@ -31,20 +31,7 @@ public class ApplicationExit {
     @PreDestroy
     public void destroy() {
         String userHomeDir = System.getProperty("user.home");
-        File configFile = new File(userHomeDir+"/config.json");
         Logger logger = Logger.getLogger(Application.class);
-        try {
-            ObjectMapper objectMapper = new ObjectMapper(new JsonFactory());
-            Iterable<Processor> configIterable = configurationRepository.findAll();
-            List<Processor> configList = StreamSupport.stream(configIterable.spliterator(), false).collect(Collectors.toList());
-            try(OutputStream os = new FileOutputStream(configFile)){
-                objectMapper.writeValue(os, configList);
-            }
-
-        } catch (Exception e) {
-            logger.error("Error writing config file", e);
-            e.printStackTrace();
-        }
         File sessionFile = new File(userHomeDir+"/sessions.json");
         try {
             ObjectMapper objectMapper = new ObjectMapper(new JsonFactory());

@@ -27,10 +27,8 @@ import org.springframework.web.servlet.ModelAndView;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -46,10 +44,12 @@ public class AdminController {
     AppConfiguration appConfiguration;
 
     @Autowired
-    ScriptExecutionUtils scriptExecutionUtils;
+    ScriptClient scriptExecutionUtils;
 
     @Autowired
-    VaultConfigurationRepository configurationRepository;
+    VaultProcessorRepository configurationRepository;
+    @Autowired
+    VaultScriptLibraryRepository scriptLibraryRepository;
 
     @Autowired
     ThreadRegistry threadRegistry;
@@ -58,6 +58,7 @@ public class AdminController {
     ContextRepository cacheRepository;
 
     FilesClient filesClient;
+    ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).registerModule(new JavaTimeModule());
 
     @Autowired
     public void setFilesClient(){
@@ -73,9 +74,8 @@ public class AdminController {
     public ResponseEntity revertSingleProject(@PathVariable String id, @RequestHeader(name = "Authorization") String sessionId) {
         threadRegistry.save(new ThreadItem(Thread.currentThread().getName(), null));
         VaultClient vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(appConfiguration.getVaultConfigurationHost()).withVaultClientId(VAULT_CLIENT_ID).withVaultSessionId(sessionId).build();
-        ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.registerModule(new JavaTimeModule());
         Processor processor = configurationRepository.findById(id).orElse(null);
+        scriptExecutionUtils.deployScript(processor);
         ResponseEntity response = null;
         if(processor == null){
             response = ResponseEntity.status(HttpServletResponse.SC_BAD_REQUEST).build();
@@ -101,22 +101,22 @@ public class AdminController {
         return response;
     }
 
-    @PostMapping(path = "/revert/library/{libraryName}", produces = "text/plain")
-    public ResponseEntity revertSingleLibrary(@PathVariable String libraryName, @RequestHeader(name = "Authorization") String sessionId) throws Exception {
+    @PostMapping(path = "/revert/library/{id}", produces = "text/plain")
+    public ResponseEntity revertSingleLibrary(@PathVariable String id, @RequestHeader(name = "Authorization") String sessionId) throws Exception {
         threadRegistry.save(new ThreadItem(Thread.currentThread().getName(), null));
         VaultClient vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(appConfiguration.getVaultConfigurationHost()).withVaultClientId(VAULT_CLIENT_ID).withVaultSessionId(sessionId).build();
-        java.io.File javaFile = scriptExecutionUtils.convertLibraryNameToFile(libraryName);
-        if(!javaFile.exists()) return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).build();
-        File file = new File(javaFile);
-        String content = filesClient.readFileToString(file, StandardCharsets.UTF_8);
+        Optional<ScriptLibrary> scriptLibrary = scriptLibraryRepository.findById(id);
+        if(!scriptLibrary.isPresent()) return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).build();
+        scriptExecutionUtils.deployLibrary(scriptLibrary.get());
+        String content = scriptLibrary.get().getDefinition();
         ResponseEntity response = null;
         if(content == null){
             response = ResponseEntity.status(HttpServletResponse.SC_BAD_REQUEST).build();
         }
         try {
             JsonObject jsonRecord = new JsonObject();
-            jsonRecord.put("name__v", libraryName);
-            jsonRecord.put("definition", content);
+            jsonRecord.put("id", id);
+            jsonRecord.put("definition__c", content);
             JsonArray data = new JsonArray();
             data.put(jsonRecord);
             ObjectRecordRequest objectRecordRequest = vaultClient.newRequest(ObjectRecordRequest.class);
@@ -141,18 +141,16 @@ public class AdminController {
         threadRegistry.save(new ThreadItem(Thread.currentThread().getName(), null));
         VaultClient vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(appConfiguration.getVaultConfigurationHost()).withVaultClientId(VAULT_CLIENT_ID).withVaultSessionId(sessionId).build();
         QueryRequest queryRequest = vaultClient.newRequest(QueryRequest.class);
-        QueryResponse queryResponse = queryRequest.query("SELECT id, log_level__c, object_type__vr.api_name__v, environment_type__c, customer__cr.name__v, customer__cr.api_name__c, endpoint_url__c, authentication_method__c, LONGTEXT(definition__c), LONGTEXT(configuration__c), api_token__c, response_type__c, method__c, (SELECT script_library__cr.class_name__c, script_library__cr.package_name__c, script_library__cr.validated_name__c FROM libraryprocessor_joins__cr) FROM processor__c WHERE id = '"+id+"'");
+        QueryResponse queryResponse = queryRequest.query("SELECT id, global_id__sys, log_level__c, object_type__vr.api_name__v, environment_type__c, customer__cr.name__v, customer__cr.api_name__c, endpoint_url__c, authentication_method__c, LONGTEXT(definition__c), LONGTEXT(configuration__c), api_token__c, response_type__c, method__c, (SELECT script_library__cr.class_name__c, script_library__cr.package_name__c, script_library__cr.validated_name__c FROM libraryprocessor_joins__cr) FROM processor__c WHERE id = '"+id+"'");
         System.out.println(queryResponse.getResponseJSON().toString());
         String jsonResponse = queryResponse.getData().get(0).toJsonString();
-        ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.registerModule(new JavaTimeModule());
         ResponseEntity response = null;
         try{
             Processor processor = objectMapper.readerFor(Processor.class).readValue(jsonResponse);
-            configurationRepository.save(processor);
-            ScriptExecutionUtils.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployScript(processor);
+            ScriptClient.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployScript(processor);
             if(validationResponse.isValidated()){
                 response = ResponseEntity.ok("SUCCESS");
+                configurationRepository.save(processor);
             }else{
                 response = ResponseEntity.badRequest().body(validationResponse.getValidationMessage());
             }
@@ -168,16 +166,15 @@ public class AdminController {
         threadRegistry.save(new ThreadItem(Thread.currentThread().getName(), null));
         VaultClient vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(appConfiguration.getVaultConfigurationHost()).withVaultClientId(VAULT_CLIENT_ID).withVaultSessionId(sessionId).build();
         QueryRequest queryRequest = vaultClient.newRequest(QueryRequest.class);
-        QueryResponse queryResponse = queryRequest.query("SELECT id, package_name__c, class_name__c, validated_name__c, LONGTEXT(definition__c) FROM script_library__c where id = '"+id+"'");
+        QueryResponse queryResponse = queryRequest.query("SELECT id, global_id__sys, package_name__c, environment_type__c, class_name__c, validated_name__c, LONGTEXT(definition__c), (SELECT id, referring_library__cr.package_name__c, referring_library__cr.class_name__c, referring_library__cr.validated_name__c FROM childibrary_joins__cr where status__v = 'active__v') FROM script_library__c where id = '"+id+"'");
         String jsonResponse = queryResponse.getData().get(0).toJsonString();
-        ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.registerModule(new JavaTimeModule());
         ResponseEntity response = null;
         try{
             ScriptLibrary scriptLibrary = objectMapper.readerFor(ScriptLibrary.class).readValue(jsonResponse);
-            ScriptExecutionUtils.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployLibrary(scriptLibrary);
+            ScriptClient.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployLibrary(scriptLibrary);
             if(validationResponse.isValidated()){
                 response = ResponseEntity.ok("SUCCESS");
+                scriptLibraryRepository.save(scriptLibrary);
             }else{
                 response = ResponseEntity.badRequest().body(validationResponse.getValidationMessage());
             }
@@ -309,14 +306,24 @@ public class AdminController {
     public ModelAndView saveScript(@RequestParam String vaultDNS, @RequestParam String authorization, @RequestParam String objectName, @RequestParam String id, @RequestParam String field, @RequestParam String definition, Model model) {
         threadRegistry.save(new ThreadItem(Thread.currentThread().getName(), null));
         VaultClient client = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(appConfiguration.getVaultConfigurationHost()).withVaultClientId(VAULT_CLIENT_ID).withVaultSessionId(authorization).build();
-        ScriptExecutionUtils.ScriptValidationResponse validationResponse = scriptExecutionUtils.newScriptValidationResponseInstance();
+        ScriptClient.ScriptValidationResponse validationResponse = scriptExecutionUtils.newScriptValidationResponseInstance();
         if(field.equals("definition__c")){
-            String relationshipQuery = objectName.equals("script_library__c")? "SELECT id, environment_type__c, package_name__c, class_name__c, (SELECT id, referring_library__cr.package_name__c, referring_library__cr.class_name__c, referring_library__cr.validated_name__c FROM childibrary_joins__cr where status__v = 'active__v') FROM "+objectName+" WHERE id = '"+id+"'" : "SELECT id, environment_type__c, (SELECT script_library__cr.class_name__c, script_library__cr.package_name__c, script_library__cr.validated_name__c FROM libraryprocessor_joins__cr where status__v = 'active__v') FROM "+objectName+" WHERE id = '"+id+"'";
+            String relationshipQuery = objectName.equals("script_library__c")? "SELECT id, global_id__sys, environment_type__c, package_name__c, class_name__c, (SELECT id, global_id__sys, referring_library__cr.package_name__c, referring_library__cr.class_name__c, referring_library__cr.validated_name__c FROM childibrary_joins__cr where status__v = 'active__v') FROM "+objectName+" WHERE id = '"+id+"'" : "SELECT id, environment_type__c, (SELECT script_library__cr.class_name__c, script_library__cr.package_name__c, script_library__cr.validated_name__c FROM libraryprocessor_joins__cr where status__v = 'active__v') FROM "+objectName+" WHERE id = '"+id+"'";
             QueryResponse queryResponse = client.newRequest(QueryRequest.class).query(relationshipQuery);
-            String environmentTypeAPi = queryResponse.getData().get(0).getListString("environment_type__c").get(0);
-            Processor.Environment environmentType = Processor.Environment.valueOf(environmentTypeAPi);
-            List<String> dependencies = queryResponse.getData().stream().map(row -> objectName.equals("script_library__c")?  row.getSubQuery("childibrary_joins__cr") : row.getSubQuery("libraryprocessor_joins__cr")).flatMap(subQuery -> subQuery.getData().stream()).map(each -> objectName.equals("script_library__c")? each.getString("referring_library__cr.validated_name__c") : each.getString("script_library__cr.validated_name__c")).collect(Collectors.toList());
-            validationResponse = objectName.equals("script_library__c")? scriptExecutionUtils.validateLibrary(queryResponse.getData().get(0).getString("package_name__c")+"."+queryResponse.getData().get(0).getString("class_name__c"), environmentType, definition, dependencies) : scriptExecutionUtils.validateScript(environmentType, definition, dependencies);
+            String jsonResponse = queryResponse.getData().get(0).toJsonString();
+            try {
+                if(objectName.equals("script_library__c")){
+                    ScriptLibrary library = objectMapper.readerFor(ScriptLibrary.class).readValue(jsonResponse);
+                    library.setDefinition(definition);
+                    validationResponse = scriptExecutionUtils.validateLibrary(library);
+                }else{
+                    Processor processor = objectMapper.readerFor(Processor.class).readValue(jsonResponse);
+                    processor.setDefinition(definition);
+                    scriptExecutionUtils.validateScript(processor);
+                }
+            }catch(Exception e){
+                validationResponse = new ScriptClient.ScriptValidationResponse(false, e.getMessage());
+            }
         }
         if(validationResponse.isValidated()) {
             JsonObject jsonObject = new JsonObject();
@@ -366,15 +373,29 @@ public class AdminController {
         }
         VaultClient vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(appConfiguration.getVaultConfigurationHost()).withVaultClientId(VAULT_CLIENT_ID).withVaultSessionId(authorization).build();
         QueryRequest queryRequest = vaultClient.newRequest(QueryRequest.class);
-        QueryResponse queryResponse = queryRequest.query("SELECT id, log_level__c, object_type__vr.api_name__v, environment_type__c, customer__cr.name__v, customer__cr.api_name__c, endpoint_url__c, authentication_method__c, LONGTEXT(definition__c), LONGTEXT(configuration__c), api_token__c, response_type__c, method__c, (SELECT script_library__cr.class_name__c, script_library__cr.package_name__c, script_library__cr.validated_name__c FROM libraryprocessor_joins__cr) FROM processor__c WHERE state__v = 'active_state__c'");
-        ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.registerModule(new JavaTimeModule());
+        QueryResponse queryResponse = queryRequest.query("SELECT id, global_id__sys, log_level__c, object_type__vr.api_name__v, environment_type__c, customer__cr.name__v, customer__cr.api_name__c, endpoint_url__c, authentication_method__c, LONGTEXT(definition__c), LONGTEXT(configuration__c), api_token__c, response_type__c, method__c, (SELECT script_library__cr.class_name__c, script_library__cr.package_name__c, script_library__cr.validated_name__c FROM libraryprocessor_joins__cr) FROM processor__c WHERE state__v = 'active_state__c'");
         for(QueryResponse.QueryResult record : queryResponse.getData()){
             String jsonResponse = record.toJsonString();
             try{
                 Processor processor = objectMapper.readerFor(Processor.class).readValue(jsonResponse);
-                configurationRepository.save(processor);
-                ScriptExecutionUtils.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployScript(processor);
+                ScriptClient.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployScript(processor);
+                if(validationResponse.isValidated()){
+                    configurationRepository.save(processor);
+                }
+            }catch (Exception e){
+                Logger.getLogger(this.getClass()).error(e.getMessage(), e);
+            }
+        }
+        QueryRequest libraryQueryRequest = vaultClient.newRequest(QueryRequest.class);
+        QueryResponse libraryQueryResponse = libraryQueryRequest.query("SELECT id, global_id__sys, package_name__c, environment_type__c, class_name__c, validated_name__c, LONGTEXT(definition__c), (SELECT id, referring_library__cr.package_name__c, referring_library__cr.class_name__c, referring_library__cr.validated_name__c FROM childibrary_joins__cr where status__v = 'active__v') FROM script_library__c WHERE state__v = 'active_state__c'");
+        for(QueryResponse.QueryResult record : libraryQueryResponse.getData()){
+            String jsonResponse = record.toJsonString();
+            try{
+                ScriptLibrary scriptLibrary = objectMapper.readerFor(ScriptLibrary.class).readValue(jsonResponse);
+                ScriptClient.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployLibrary(scriptLibrary);
+                if(validationResponse.isValidated()){
+                    scriptLibraryRepository.save(scriptLibrary);
+                }
             }catch (Exception e){
                 Logger.getLogger(this.getClass()).error(e.getMessage(), e);
             }

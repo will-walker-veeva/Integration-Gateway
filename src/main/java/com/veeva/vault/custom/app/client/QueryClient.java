@@ -28,10 +28,6 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
-/**
- * @hidden
- */
 @Service
 public class QueryClient {
 

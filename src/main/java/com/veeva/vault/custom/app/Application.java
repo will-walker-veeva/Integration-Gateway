@@ -10,7 +10,7 @@ import com.veeva.vault.custom.app.admin.Session;
 
 import com.veeva.vault.custom.app.client.Client;
 import com.veeva.vault.custom.app.client.Logger;
-import com.veeva.vault.custom.app.repository.VaultConfigurationRepository;
+import com.veeva.vault.custom.app.repository.VaultProcessorRepository;
 import com.veeva.vault.custom.app.repository.VaultSessionRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +35,7 @@ import java.util.concurrent.Executor;
 public class Application implements CommandLineRunner {
 
     @Autowired
-    VaultConfigurationRepository configurationRepository;
+    VaultProcessorRepository configurationRepository;
 
     @Autowired
     VaultSessionRepository sessionRepository;
@@ -65,23 +65,7 @@ public class Application implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         String userHomeDir = System.getProperty("user.home");
-        File configFile = new File(userHomeDir+"/config.json");
         Logger logger = Logger.getLogger(Application.class);
-        if(configFile.exists()) {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper(new JsonFactory());
-                String content = Files.readString(configFile.toPath());
-                List<Processor> configList = objectMapper.readValue(content, new TypeReference<List<Processor>>() {
-                });
-                configurationRepository.saveAll(configList);
-                configFile.delete();
-            } catch (Exception e) {
-                logger.error("Error reading config file", e);
-                e.printStackTrace();
-            }
-        }else{
-            Logger.getLogger(Application.class).info("Config File not found");
-        }
         File sessionFile = new File(userHomeDir+"/sessions.json");
         if(sessionFile.exists()) {
             try {

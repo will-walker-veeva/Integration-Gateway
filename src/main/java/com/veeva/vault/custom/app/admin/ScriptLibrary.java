@@ -1,23 +1,22 @@
 package com.veeva.vault.custom.app.admin;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.io.Serializable;
+import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Embeddable
-public class ScriptLibrary implements Serializable {
+@Entity
+public class ScriptLibrary extends VaultConfigurationRecord {
     public static final String OBJECT_NAME = "script_library__c";
-    @JsonProperty("definition__c")
-    @JsonAlias({ "script_library__cr.definition__c" , "referring_library__cr.definition__c"})
-    @Column(length = 32000)
-    private String definition;
 
     @JsonProperty("package_name__c")
     @JsonAlias({ "script_library__cr.package_name__c" , "referring_library__cr.package_name__c"})
@@ -31,11 +30,16 @@ public class ScriptLibrary implements Serializable {
     @JsonAlias({ "script_library__cr.validated_name__c", "referring_library__cr.validated_name__c"})
     private String validatedName;
 
+    @JsonProperty("childibrary_joins__cr")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private ScriptLibraryHolder scriptLibraryHolder;
+
     public ScriptLibrary() {
     }
 
-    public String getDefinition() {
-        return definition;
+    @JsonIgnore
+    public String getName(){
+        return this.packageName+"."+this.className;
     }
 
     public String getPackageName() {
@@ -48,5 +52,8 @@ public class ScriptLibrary implements Serializable {
 
     public String getValidatedName() {
         return validatedName;
+    }
+    public ScriptLibraryHolder getScriptLibraryHolder() {
+        return scriptLibraryHolder;
     }
 }

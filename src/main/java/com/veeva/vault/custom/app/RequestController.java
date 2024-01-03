@@ -46,13 +46,13 @@ import static com.veeva.vault.custom.app.client.Client.VAULT_CLIENT_ID;
 public class RequestController {
     private static final String API_VERSION = "v23.2";
     @Autowired
-    VaultConfigurationRepository configurationRepository;
+    VaultProcessorRepository configurationRepository;
 
     @Autowired
     VaultSessionRepository sessionRepository;
 
     @Autowired
-    ScriptExecutionUtils scriptExecutionUtils;
+    ScriptClient scriptExecutionUtils;
 
     @Autowired
     AppConfiguration appConfiguration;
@@ -394,7 +394,7 @@ public class RequestController {
         String environmentType = environment+"__c";
         Collection<Processor> processors = (Collection<Processor>) this.configurationRepository.findAll(Example.of(exampleProcessor));
         if(processors!=null && !processors.isEmpty()){
-            Processor processor = processors.stream().filter(item -> item.getMethod() == Processor.Method.valueOf(method)).filter(item -> item.getEnvironmentType() == Processor.Environment.valueOf(environmentType)).findFirst().orElse(null);
+            Processor processor = processors.stream().filter(item -> item.getMethod() == Processor.Method.valueOf(method)).filter(item -> item.getEnvironmentType() == EnvironmentType.valueOf(environmentType)).findFirst().orElse(null);
             if(processor!=null) {
                 //IP Filtering Possible HERE:
 

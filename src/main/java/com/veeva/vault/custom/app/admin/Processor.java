@@ -3,9 +3,7 @@ package com.veeva.vault.custom.app.admin;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -13,7 +11,7 @@ import java.util.List;
 
 @Entity
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Processor {
+public class Processor extends VaultConfigurationRecord {
     public static final String OBJECT_NAME = "processor__c";
     public enum LogLevel{
         error__c,
@@ -28,32 +26,6 @@ public class Processor {
         web_job__c,
         web_action__c,
         base__v
-    }
-
-    public enum Environment{
-        sandbox__c,
-        validation__c,
-        production__c,
-        prerelease__c;
-
-        public String toLabel(){
-            String environmentType = null;
-            switch(this){
-                case sandbox__c:
-                    environmentType="Sandbox";
-                    break;
-                case validation__c:
-                    environmentType="Validation";
-                    break;
-                case production__c:
-                    environmentType="Production";
-                    break;
-                case prerelease__c:
-                    environmentType="Prerelease";
-                    break;
-            }
-            return environmentType;
-        }
     }
 
     public enum AuthenticationMethod{
@@ -73,18 +45,12 @@ public class Processor {
         put__c,
         delete__c
     }
-    @Id
-    @JsonProperty("id")
-    private String id;
 
     @JsonProperty("log_level__c")
     private List<LogLevel> logLevel;
 
     @JsonProperty("object_type__vr.api_name__v")
     private Type processorType;
-
-    @JsonProperty("environment_type__c")
-    private List<Environment> environmentType;
 
     @JsonProperty("customer__cr.name__v")
     private String customerName;
@@ -97,10 +63,6 @@ public class Processor {
 
     @JsonProperty("authentication_method__c")
     private List<AuthenticationMethod> authenticationMethod;
-
-    @JsonProperty("definition__c")
-    @Column(length = 32000)
-    private String definition;
 
     @JsonProperty("configuration__c")
     @Column(length = 32000)
@@ -128,20 +90,12 @@ public class Processor {
         this.processorType = type;
     }
 
-    public String getId(){
-        return id;
-    }
-
     public LogLevel getLogLevel() {
         return logLevel!=null && !logLevel.isEmpty()? logLevel.get(0) : null;
     }
 
     public Type getProcessorType() {
         return processorType;
-    }
-
-    public Environment getEnvironmentType() {
-        return environmentType!=null && !environmentType.isEmpty()? environmentType.get(0) : null;
     }
 
     public String getCustomerName() {
@@ -158,10 +112,6 @@ public class Processor {
 
     public AuthenticationMethod getAuthenticationMethod() {
         return authenticationMethod!=null && !authenticationMethod.isEmpty()? authenticationMethod.get(0) : null;
-    }
-
-    public String getDefinition() {
-        return definition;
     }
 
     public String getApiToken() {
@@ -184,20 +134,4 @@ public class Processor {
         return scriptLibraryHolder;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Embeddable
-    public static class ScriptLibraryHolder{
-
-        @JsonProperty("data")
-        @JdbcTypeCode(SqlTypes.JSON)
-        private List<ScriptLibrary> scriptLibraries;
-
-        public ScriptLibraryHolder(){
-
-        }
-
-        public List<ScriptLibrary> getScriptLibraries() {
-            return scriptLibraries;
-        }
-    }
 }

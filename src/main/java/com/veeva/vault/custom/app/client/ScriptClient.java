@@ -1,6 +1,7 @@
 package com.veeva.vault.custom.app.client;
 
 import com.veeva.vault.custom.app.admin.AppConfiguration;
+import com.veeva.vault.custom.app.admin.EnvironmentType;
 import com.veeva.vault.custom.app.exception.ProcessException;
 import com.veeva.vault.custom.app.admin.Processor;
 import com.veeva.vault.custom.app.admin.ScriptLibrary;
@@ -8,26 +9,15 @@ import com.veeva.vault.custom.app.model.files.File;
 import com.veeva.vault.custom.app.model.json.JsonObject;
 import com.veeva.vault.custom.app.model.http.HttpRequest;
 import com.veeva.vault.custom.app.model.http.HttpResponse;
-import com.veeva.vault.custom.app.repository.ThreadRegistry;
 import groovy.lang.*;
 import groovy.util.GroovyScriptEngine;
-import jakarta.persistence.EntityManager;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.control.customizers.SecureASTCustomizer;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.boot.registry.BootstrapServiceRegistry;
-import org.hibernate.boot.registry.BootstrapServiceRegistryBuilder;
-import org.hibernate.boot.registry.StandardServiceRegistry;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.cfg.Configuration;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,9 +27,9 @@ import java.util.stream.Stream;
  * @hidden
  */
 @Service
-public class ScriptExecutionUtils {
+public class ScriptClient {
 
-    public ScriptExecutionUtils(){
+    public ScriptClient(){
 
     }
 
@@ -57,7 +47,7 @@ public class ScriptExecutionUtils {
 
     private Logger logger;
 
-    private static Map<Processor.Environment, GroovyScriptEngine> libraryGroovyShells;
+    private static Map<EnvironmentType, GroovyScriptEngine> libraryGroovyShells;
 
     public static final List<String> ALLOWED_STAR_LIST = Arrays.asList("java.util.*",
             "java.lang.*", "java.time.*", "java.time.format.*", "java.math.*",
@@ -78,8 +68,8 @@ public class ScriptExecutionUtils {
     public void init() {
         filesClient = new FilesClient();
         logger = Logger.getLogger(this.getClass());
-        libraryGroovyShells = new HashMap<Processor.Environment, GroovyScriptEngine>();
-        Processor.Environment[] environments = Processor.Environment.values();
+        libraryGroovyShells = new HashMap<EnvironmentType, GroovyScriptEngine>();
+        EnvironmentType[] environments = EnvironmentType.values();
         Arrays.stream(environments).forEach(environmentType -> {
             String path = getCachePath(environmentType);
             GroovyScriptEngine scriptEngine = null;
@@ -121,21 +111,21 @@ public class ScriptExecutionUtils {
         });
     }
 
-    protected GroovyScriptEngine loadScriptContext(Processor.Environment environmentType){
+    protected GroovyScriptEngine loadScriptContext(EnvironmentType environmentType){
         CompilerConfiguration config = getCompilerConfiguration(environmentType);
         GroovyScriptEngine engine = libraryGroovyShells.get(environmentType);
         engine.setConfig(config);
         return engine;
     }
 
-    protected GroovyScriptEngine loadScriptContext(Processor.Environment environmentType, Collection<String> deployedClasses) {
+    protected GroovyScriptEngine loadScriptContext(EnvironmentType environmentType, Collection<String> deployedClasses) {
         CompilerConfiguration config = getCompilerConfiguration(environmentType, deployedClasses);
         GroovyScriptEngine engine = libraryGroovyShells.get(environmentType);
         engine.setConfig(config);
         return engine;
     }
 
-    private CompilerConfiguration getCompilerConfiguration(Processor.Environment environmentType){
+    private CompilerConfiguration getCompilerConfiguration(EnvironmentType environmentType){
         final ImportCustomizer imports = new ImportCustomizer().addStarImports(AUTO_LIST);
         final SecureASTCustomizer secure = new SecureASTCustomizer();
         secure.setAllowedStarImports(ALLOWED_STAR_LIST);
@@ -147,7 +137,7 @@ public class ScriptExecutionUtils {
         return config;
     }
 
-    private CompilerConfiguration getCompilerConfiguration(Processor.Environment environmentType, Collection<String> supportingClasses){
+    private CompilerConfiguration getCompilerConfiguration(EnvironmentType environmentType, Collection<String> supportingClasses){
         final ImportCustomizer imports = new ImportCustomizer().addStarImports(AUTO_LIST);
         supportingClasses.stream().forEach(supportingClass -> imports.addImports(supportingClass));
         final SecureASTCustomizer secure = new SecureASTCustomizer();
@@ -226,14 +216,14 @@ public class ScriptExecutionUtils {
         return new ScriptValidationResponse(true);
     }
 
-    public ScriptValidationResponse validateScript(Processor.Environment environmentType, String script, List<String> dependencies){
+    public ScriptValidationResponse validateScript(Processor processor){
         ScriptValidationResponse response = new ScriptValidationResponse();
         try {
-            Set<String> convertedDependencies = dependencies.stream().map(each -> convertValidatedNameToLibraryName(each)).collect(Collectors.toSet());
+            Set<String> convertedDependencies = processor.getScriptLibraryHolder().getScriptLibraries().stream().map(each -> each.getValidatedName()).map(each -> convertValidatedNameToLibraryName(each)).collect(Collectors.toSet());
             logger.debug("Validating script with dependencies {}", convertedDependencies);
-            GroovyScriptEngine scriptEngine = loadScriptContext(environmentType, convertedDependencies);
+            GroovyScriptEngine scriptEngine = loadScriptContext(processor.getEnvironmentType(), convertedDependencies);
             GroovyShell shell = new GroovyShell(scriptEngine.getGroovyClassLoader(), scriptEngine.getConfig());
-            Script myScript = shell.parse(script);
+            Script myScript = shell.parse(processor.getDefinition());
         }catch(Exception e){
             response = new ScriptValidationResponse(false, e.getMessage());
         }
@@ -255,31 +245,33 @@ public class ScriptExecutionUtils {
     }
 
     public ScriptValidationResponse deployLibrary(ScriptLibrary scriptLibrary){
-        ScriptValidationResponse response = new ScriptValidationResponse();
-        String libraryName = scriptLibrary.getValidatedName();
-        java.io.File javaFile = convertLibraryNameToFile(libraryName);
-        try {
-            File file = new File(javaFile);
-            this.filesClient.writeStringToFile(file, scriptLibrary.getDefinition(), StandardCharsets.UTF_8);
-            init();
-        }catch(ProcessException e){
-            e.printStackTrace();
-            response = new ScriptValidationResponse(false, e.getMessage());
+        ScriptValidationResponse response = validateLibrary(scriptLibrary);
+        if(response.isValidated()) {
+            String libraryName = scriptLibrary.getValidatedName();
+            java.io.File javaFile = convertLibraryNameToFile(libraryName);
+            try {
+                File file = new File(javaFile);
+                this.filesClient.writeStringToFile(file, scriptLibrary.getDefinition(), StandardCharsets.UTF_8);
+                init();
+            } catch (ProcessException e) {
+                e.printStackTrace();
+                response = new ScriptValidationResponse(false, e.getMessage());
+            }
         }
         return response;
     }
 
-    public ScriptValidationResponse validateLibrary(String libraryName, Processor.Environment environmentType, String script, List<String> dependencies){
+    public ScriptValidationResponse validateLibrary(ScriptLibrary scriptLibrary){
         ScriptValidationResponse response = new ScriptValidationResponse();
         try {
-            Set<String> convertedDependencies = dependencies.stream().map(each -> convertValidatedNameToLibraryName(each)).collect(Collectors.toSet());
-            logger.debug("Validating library for {} with dependencies {}", libraryName, convertedDependencies);
-            GroovyScriptEngine scriptEngine = loadScriptContext(environmentType, convertedDependencies);
+            Set<String> convertedDependencies = scriptLibrary.getScriptLibraryHolder().getScriptLibraries().stream().map(each -> each.getValidatedName()).map(each -> convertValidatedNameToLibraryName(each)).collect(Collectors.toSet());
+            logger.debug("Validating library for {} with dependencies {}", scriptLibrary.getName(), convertedDependencies);
+            GroovyScriptEngine scriptEngine = loadScriptContext(scriptLibrary.getEnvironmentType(), convertedDependencies);
             GroovyShell shell = new GroovyShell(scriptEngine.getGroovyClassLoader(), scriptEngine.getConfig());
             if(logger.isDebugEnabled()){
                 logger.debug("Loaded classes are {}", Arrays.stream(scriptEngine.getGroovyClassLoader().getLoadedClasses()).map(className -> className.getName()).collect(Collectors.toSet()));
             }
-            Script myScript = shell.parse(script);
+            Script myScript = shell.parse(scriptLibrary.getDefinition());
         }catch(Exception e){
             e.printStackTrace();
             response = new ScriptValidationResponse(false, e.getMessage());
@@ -302,7 +294,7 @@ public class ScriptExecutionUtils {
         return javaFile;
     }
 
-    public String getCachePath(Processor.Environment environmentType){
+    public String getCachePath(EnvironmentType environmentType){
         StringBuilder pathBuilder = new StringBuilder(appConfiguration.getScriptLibraryDirectory());
         if(!appConfiguration.getScriptLibraryDirectory().endsWith("/")) pathBuilder.append("/");
         pathBuilder.append(environmentType.toLabel()).append("/");
@@ -312,7 +304,7 @@ public class ScriptExecutionUtils {
         return path;
     }
 
-    public class ScriptValidationResponse{
+    public static class ScriptValidationResponse{
         private boolean validated = true;
         private String validationMessage;
 
@@ -338,37 +330,4 @@ public class ScriptExecutionUtils {
         }
     }
 
-    /*
-    Collection<ClassLoader> classLoaders = new ArrayList<>();
-    classLoaders.add(scriptEngine.getGroovyClassLoader());
-    Map<String, Object> properties = new HashMap<String, Object>();
-    properties.put(AvailableSettings.CLASSLOADERS, classLoaders);
-    EntityManagerFactory factory = Persistence.createEntityManagerFactory("org.hibernate.ejb.HibernatePersistenceProvider", properties);
-    entityManager = factory.createEntityManager();
-
-    Configuration configuration = new Configuration();
-configuration.configure("hibernate_sp.cfg.xml");
-ServiceRegistryBuilder serviceRegistryBuilder = new ServiceRegistryBuilder().applySettings(configuration
-                            .getProperties());
-SessionFactory sessionFactory = configuration
-                            .buildSessionFactory(serviceRegistryBuilder.buildServiceRegistry());
-Session session = sessionFactory.openSession();
-    new org.hibernate.cfg.Configuration();
-
-                DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
-                GroovyClassLoader classLoader = scriptEngine.getGroovyClassLoader();
-                scriptLibraryClasses.stream().map(each -> {
-                            try {
-                                return classLoader.loadClass(each);
-                            } catch (ClassNotFoundException e) {
-                                e.printStackTrace();
-                                return null;
-                            }
-                        }).filter(el -> el!=null)
-                        .filter(el -> el.getSuperclass().getName().equals("com.veeva.vault.custom.app.model.query.QueryModel")).forEach(className -> {
-                            BeanDefinitionBuilder b = BeanDefinitionBuilder.rootBeanDefinition(className);
-                            beanFactory.registerBeanDefinition(className.getSimpleName(), b.getBeanDefinition());
-                            new org.hibernate.cfg.Configuration().addAnnotatedClass(className);
-                        });
-     */
 }

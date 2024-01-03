@@ -7,7 +7,6 @@ import com.veeva.vault.custom.app.admin.Log;
 import com.veeva.vault.custom.app.model.files.File;
 import com.veeva.vault.custom.app.repository.ContextRepository;
 import com.veeva.vault.vapil.api.client.VaultClient;
-import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
