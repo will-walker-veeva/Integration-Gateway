@@ -1,25 +1,17 @@
 package com.veeva.vault.custom.app.model.query;
 
-import jakarta.persistence.*;
-import jakarta.persistence.metamodel.EntityType;
-
-import java.util.HashMap;
-import java.util.Map;
-
-@Entity
 public abstract class QueryModel {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    @QueryProperty(key = "id", type = QueryPropertyType.BIG_INTEGER)
+    private Long id;
+    public QueryModel(){
 
-    @Column(name = "type")
-    private String type = this.getClass().getName();
-
-    //@ManyToMany(cascade = CascadeType.ALL)
-    //private Map<String, EntityType> properties = new HashMap<String, EntityType>();
-
-    public final String getType(){
-        return this.type;
     }
 
+    public QueryModel(Long id) {
+        this.id = id;
+    }
+
+    public final Long getId() {
+        return id;
+    }
 }

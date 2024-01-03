@@ -7,6 +7,7 @@ import com.veeva.vault.custom.app.admin.Log;
 import com.veeva.vault.custom.app.model.files.File;
 import com.veeva.vault.custom.app.repository.ContextRepository;
 import com.veeva.vault.vapil.api.client.VaultClient;
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,15 +28,15 @@ public class Client {
     private EncryptionClient encryptionClient;
     @Autowired
     private EmailClient emailClient;
-    //@Autowired
-    //private QueryClient queryClient;
+    @Autowired
+    private QueryClient queryClient;
     @Autowired
     private ContextRepository contextRepository;
 
     /**
      * @hidden
      */
-    public Client(){
+    protected Client(){
 
     }
 
@@ -44,7 +45,7 @@ public class Client {
      * @param autowiredClient
      * @param requestProcessorId
      */
-    public Client(Client autowiredClient, String requestProcessorId){
+    protected Client(Client autowiredClient, String requestProcessorId){
         this(autowiredClient, requestProcessorId, null, null);
     }
 
@@ -55,12 +56,12 @@ public class Client {
      * @param vaultDns
      * @param vaultSessionId
      */
-    public Client(Client autowiredClient, String requestProcessorId, String vaultDns, String vaultSessionId){
+    protected Client(Client autowiredClient, String requestProcessorId, String vaultDns, String vaultSessionId){
         this.requestProcessorId = requestProcessorId;
         if(autowiredClient!=null) {
             this.encryptionClient = autowiredClient.encryptionClient;
             this.emailClient = autowiredClient.emailClient;
-            //this.queryClient = autowiredClient.queryClient;
+            this.queryClient = autowiredClient.queryClient;
         }
         if(vaultDns!=null&&vaultSessionId!=null)
             this.vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(vaultDns).withVaultSessionId(vaultSessionId).withVaultClientId(VAULT_CLIENT_ID).withValidation(true).withApiErrorLogging(true).withHttpTimeout(120).build();
@@ -105,9 +106,9 @@ public class Client {
     public EncryptionClient encryption(){
         return this.encryptionClient;
     }
-    /*public QueryClient query(){
+    public QueryClient query(){
         return this.queryClient;
-    }*/
+    }
 
     /**
      * Returns an initialised Email Client for Email operations

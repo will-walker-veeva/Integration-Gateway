@@ -2,14 +2,20 @@ package com.veeva.vault.custom.app.client;
 
 import com.veeva.vault.custom.app.model.json.JsonObject;
 import com.veeva.vault.custom.app.model.query.QueryModel;
-import jakarta.persistence.Entity;
+import com.veeva.vault.custom.app.model.query.QueryModelInfo;
+import com.veeva.vault.custom.app.model.query.QueryProperty;
+import com.veeva.vault.custom.app.model.query.QueryPropertyType;
 
-@Entity(name = "my_table")
+
+@QueryModelInfo(name = "my_table")
 public class MyQueryModel extends QueryModel {
+    @QueryProperty(key  = "firstName", type = QueryPropertyType.TEXT)
     private String firstName;
+    @QueryProperty(key  = "lastName", type = QueryPropertyType.TEXT)
     private String lastName;
 
     public MyQueryModel(String firstName, String lastName) {
+        super(null);
         this.firstName = firstName;
         this.lastName = lastName;
     }
@@ -35,7 +41,6 @@ public class MyQueryModel extends QueryModel {
         JsonObject obj = new JsonObject();
         obj.put("fistName", firstName);
         obj.put("lastName", lastName);
-        obj.put("type", getType());
         return obj.toString();
     }
 

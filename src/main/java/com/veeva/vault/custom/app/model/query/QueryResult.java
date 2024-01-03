@@ -1,21 +1,36 @@
 package com.veeva.vault.custom.app.model.query;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Iterator;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 
-public class QueryResult <T>{
+public class QueryResult <T> implements Iterable<T>{
     private List<T> results;
-    private Integer maxResults;
 
-    public QueryResult(List<T> results, Integer maxResults) {
+    public QueryResult(List<T> results) {
         this.results = results;
-        this.maxResults = maxResults;
     }
 
     public List<T> getResults() {
         return results;
     }
 
-    public Integer getMaxResults() {
-        return maxResults;
+    @NotNull
+    @Override
+    public Iterator<T> iterator() {
+        return results.iterator();
+    }
+
+    @Override
+    public void forEach(Consumer<? super T> action) {
+       results.forEach(action);
+    }
+
+    @Override
+    public Spliterator<T> spliterator() {
+        return results.spliterator();
     }
 }

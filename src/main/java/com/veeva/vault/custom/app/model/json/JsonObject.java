@@ -18,6 +18,10 @@ public class JsonObject implements Map<String, Object> {
 
     }
 
+    public JsonObject(Map<String, Object> map){
+        this.jsonObject = new JSONObject(map);
+    }
+
     public JsonObject(String jsonString){
         jsonObject = new JSONObject(jsonString);
     }

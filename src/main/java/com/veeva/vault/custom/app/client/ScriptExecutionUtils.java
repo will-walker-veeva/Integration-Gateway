@@ -1,9 +1,5 @@
 package com.veeva.vault.custom.app.client;
 
-import com.thoughtworks.qdox.JavaDocBuilder;
-import com.thoughtworks.qdox.model.JavaClass;
-import com.thoughtworks.qdox.model.JavaSource;
-import com.thoughtworks.qdox.model.Type;
 import com.veeva.vault.custom.app.admin.AppConfiguration;
 import com.veeva.vault.custom.app.exception.ProcessException;
 import com.veeva.vault.custom.app.admin.Processor;
@@ -12,15 +8,22 @@ import com.veeva.vault.custom.app.model.files.File;
 import com.veeva.vault.custom.app.model.json.JsonObject;
 import com.veeva.vault.custom.app.model.http.HttpRequest;
 import com.veeva.vault.custom.app.model.http.HttpResponse;
-import groovy.lang.Binding;
-import groovy.lang.GroovyCodeSource;
-import groovy.lang.GroovyShell;
-import groovy.lang.Script;
+import com.veeva.vault.custom.app.repository.ThreadRegistry;
+import groovy.lang.*;
 import groovy.util.GroovyScriptEngine;
+import jakarta.persistence.EntityManager;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.control.customizers.SecureASTCustomizer;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.boot.registry.BootstrapServiceRegistry;
+import org.hibernate.boot.registry.BootstrapServiceRegistryBuilder;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Configuration;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -46,6 +49,10 @@ public class ScriptExecutionUtils {
     @Autowired
     private AppConfiguration appConfiguration;
 
+    //@Autowired
+    //private Configuration configuration;
+
+
     private FilesClient filesClient;
 
     private Logger logger;
@@ -62,11 +69,10 @@ public class ScriptExecutionUtils {
             "com.veeva.vault.vapil.api.model.*", "com.veeva.vault.vapil.api.model.builder.*",
             "com.veeva.vault.vapil.api.model.common.*", "com.veeva.vault.vapil.api.model.metadata.*",
             "com.veeva.vault.vapil.api.model.response.*", "com.veeva.vault.vapil.api.request.*",
-            "com.veeva.vault.vapil.api.connector.*",
-            "jakarta.persistence.*", "org.hibernate.annotations.*");
-    public static final List<String> ALLOWED_LIST = Arrays.asList("com.veeva.vault.custom.app.client.Client", "com.veeva.vault.custom.app.client.Emaillient", "com.veeva.vault.custom.app.client.EncryptionClient", "com.veeva.vault.custom.app.client.FilesClient", "com.veeva.vault.custom.app.client.HttpClient", "com.veeva.vault.custom.app.client.JsonClient", "com.veeva.vault.custom.app.client.QueryClient", "com.veeva.vault.custom.app.client.Logger", "com.veeva.vault.custom.app.client.TemplateProcessorClient", "com.veeva.vault.custom.app.client.XmlClient", "org.hibernate.type.SqlTypes" );
+            "com.veeva.vault.vapil.api.connector.*");
+    public static final List<String> ALLOWED_LIST = Arrays.asList("com.veeva.vault.custom.app.client.Client", "com.veeva.vault.custom.app.client.Emaillient", "com.veeva.vault.custom.app.client.EncryptionClient", "com.veeva.vault.custom.app.client.FilesClient", "com.veeva.vault.custom.app.client.HttpClient", "com.veeva.vault.custom.app.client.JsonClient", "com.veeva.vault.custom.app.client.QueryClient", "com.veeva.vault.custom.app.client.Logger", "com.veeva.vault.custom.app.client.TemplateProcessorClient", "com.veeva.vault.custom.app.client.XmlClient");
 
-    private static final String[] AUTO_LIST = {"java.util", "java.lang", "java.time", "java.math", "java.time.format",  "com.veeva.vault.custom.app.model.core", "com.veeva.vault.custom.app.model.csv",  "com.veeva.vault.custom.app.model.files",  "com.veeva.vault.custom.app.model.json",  "com.veeva.vault.custom.app.model.http", "com.veeva.vault.vapil.api.client", "com.veeva.vault.vapil.api.request"};
+    private static final String[] AUTO_LIST = {"java.util", "java.lang", "java.time", "java.math", "java.time.format",  "com.veeva.vault.custom.app.model.core", "com.veeva.vault.custom.app.model.csv",  "com.veeva.vault.custom.app.model.files", "com.veeva.vault.custom.app.model.query", "com.veeva.vault.custom.app.model.json",  "com.veeva.vault.custom.app.model.http", "com.veeva.vault.vapil.api.client", "com.veeva.vault.vapil.api.request"};
 
     @Autowired
     public void init() {
@@ -212,6 +218,7 @@ public class ScriptExecutionUtils {
             response.setResponseBody("FAILURE: "+e.getMessage());
         }
         client.setLogs(logger.getLogs(Thread.currentThread().getName()));
+        client.query().dropTables();
         return client;
     }
 
@@ -273,19 +280,6 @@ public class ScriptExecutionUtils {
                 logger.debug("Loaded classes are {}", Arrays.stream(scriptEngine.getGroovyClassLoader().getLoadedClasses()).map(className -> className.getName()).collect(Collectors.toSet()));
             }
             Script myScript = shell.parse(script);
-            /*
-            try {
-                JavaDocBuilder builder = new JavaDocBuilder();
-                JavaSource src = builder.addSource(new StringReader(script));
-                JavaClass javaClass = src.getClasses()[0];
-                Type superclass = javaClass.getSuperClass();
-                if(superclass.toString().equals("com.veeva.vault.custom.app.model.query.QueryModel")){
-                    String[] source = {script};
-                    com.sun.tools.javac.Main.compile(source);
-                }
-            }catch(Exception e){
-                e.printStackTrace();
-            }*/
         }catch(Exception e){
             e.printStackTrace();
             response = new ScriptValidationResponse(false, e.getMessage());
@@ -343,4 +337,38 @@ public class ScriptExecutionUtils {
             return validationMessage;
         }
     }
+
+    /*
+    Collection<ClassLoader> classLoaders = new ArrayList<>();
+    classLoaders.add(scriptEngine.getGroovyClassLoader());
+    Map<String, Object> properties = new HashMap<String, Object>();
+    properties.put(AvailableSettings.CLASSLOADERS, classLoaders);
+    EntityManagerFactory factory = Persistence.createEntityManagerFactory("org.hibernate.ejb.HibernatePersistenceProvider", properties);
+    entityManager = factory.createEntityManager();
+
+    Configuration configuration = new Configuration();
+configuration.configure("hibernate_sp.cfg.xml");
+ServiceRegistryBuilder serviceRegistryBuilder = new ServiceRegistryBuilder().applySettings(configuration
+                            .getProperties());
+SessionFactory sessionFactory = configuration
+                            .buildSessionFactory(serviceRegistryBuilder.buildServiceRegistry());
+Session session = sessionFactory.openSession();
+    new org.hibernate.cfg.Configuration();
+
+                DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+                GroovyClassLoader classLoader = scriptEngine.getGroovyClassLoader();
+                scriptLibraryClasses.stream().map(each -> {
+                            try {
+                                return classLoader.loadClass(each);
+                            } catch (ClassNotFoundException e) {
+                                e.printStackTrace();
+                                return null;
+                            }
+                        }).filter(el -> el!=null)
+                        .filter(el -> el.getSuperclass().getName().equals("com.veeva.vault.custom.app.model.query.QueryModel")).forEach(className -> {
+                            BeanDefinitionBuilder b = BeanDefinitionBuilder.rootBeanDefinition(className);
+                            beanFactory.registerBeanDefinition(className.getSimpleName(), b.getBeanDefinition());
+                            new org.hibernate.cfg.Configuration().addAnnotatedClass(className);
+                        });
+     */
 }

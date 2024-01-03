@@ -177,4 +177,8 @@ public class JsonArray implements Collection<Object>, Iterable<Object>{
         jsonArray.jsonArray = CDL.toJSONArray(csv);
         return jsonArray;
     }
+
+    public String toCsvString(){
+        return CDL.toString(this.jsonArray);
+    }
 }
