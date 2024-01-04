@@ -304,6 +304,9 @@ public class ScriptClient {
         return path;
     }
 
+    /**
+     * @hidden
+     */
     public static class ScriptValidationResponse{
         private boolean validated = true;
         private String validationMessage;

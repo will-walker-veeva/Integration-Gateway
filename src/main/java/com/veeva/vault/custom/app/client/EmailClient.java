@@ -9,6 +9,9 @@ import org.apache.commons.mail.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+/**
+ * Client for Email-based operations
+ */
 @Service
 public class EmailClient {
     private static AppConfiguration appConfiguration;

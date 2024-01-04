@@ -28,7 +28,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-
+/**
+ * Client for Http Request operations
+ */
 @Service
 public class HttpClient{
 

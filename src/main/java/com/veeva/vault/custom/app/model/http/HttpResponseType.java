@@ -3,6 +3,10 @@ package com.veeva.vault.custom.app.model.http;
 import com.veeva.vault.custom.app.model.json.JsonArray;
 import com.veeva.vault.custom.app.model.json.JsonObject;
 
+/**
+ * Types of data supported by an HTTP response body.
+ * @param <T>
+ */
 public class HttpResponseType<T> {
     public static final HttpResponseType<byte[]> BINARY = new HttpResponseType<byte[]>(byte[].class);
     public static final HttpResponseType<JsonObject> JSONDATA = new HttpResponseType<JsonObject>(JsonObject.class);

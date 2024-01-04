@@ -16,6 +16,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Logger comes available in all scripts as 'logger' variable. <br>
+ */
 public class Logger {
     private static final Map<String, List<Log>> logs = new HashMap<String, List<Log>>();
     private org.apache.logging.log4j.Logger logger;

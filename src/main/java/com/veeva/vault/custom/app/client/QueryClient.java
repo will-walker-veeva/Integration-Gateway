@@ -28,6 +28,10 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+
+/**
+ * Client for Query-based operations, including registering temporary tables, saving elements to and querying these
+ */
 @Service
 public class QueryClient {
 

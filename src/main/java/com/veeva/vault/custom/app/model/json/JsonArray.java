@@ -11,6 +11,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Represents a JSON array.
+ */
 public class JsonArray implements Collection<Object>, Iterable<Object>{
     @AnySetter
     @AnyGetter

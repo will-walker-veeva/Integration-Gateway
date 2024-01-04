@@ -14,7 +14,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The Client is available in script as 'client' variable
+ * Base class for all operations, for example: <br>
+ * 1. {@link #vapil()} returns an Authenticated VAPIL Vault Client for Spark Processors and Web Action Processors<br>
+ * 2. {@link #http()} returns a HttpClient for HTTP Operations<br>
+ * 3. {@link #json()} returns a JsonClient for deserializing Json Models (see {@link com.veeva.vault.custom.app.model.json.JsonModel})<br>
+ * See below for further services <br><br>
+ *
+ * 'client' comes pre-initiated in scripts, for example:
+ * <pre style="font-size: x-small;">{@code
+ * String id = parameters.get("id");
+ * String query = "SELECT id, date_of_creation__v, date_of_most_recent_information__v, LONGTEXT(case_narrative__v), FROM event__v WHERE id =  '"+id+"'";
+ * logger.info("Querying {}", query);
+ * QueryResponse data = client.vapil().newRequest(QueryRequest.class).query(query)
+ * }</pre>
+ *
+ * Full list of services can be found below:
  */
 @Service
 public class Client {

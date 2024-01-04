@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veeva.vault.custom.app.exception.ProcessException;
 import com.veeva.vault.custom.app.admin.templateprocessor.TemplateProcessorDialect;
 import com.veeva.vault.custom.app.model.json.JsonObject;
+import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect;
@@ -15,6 +16,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Client for Template-based operations, can handle parsing a thymeleaf template with a properties set
+ */
+@Service
 public class TemplateProcessorClient {
     private TemplateProcessorClient(){
 

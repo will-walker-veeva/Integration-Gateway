@@ -29,6 +29,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Client for CSV operations, reading CSV files and mapping to/from CSV models
+ *  See also {@link com.veeva.vault.custom.app.model.csv}<br>
+ */
 @Service
 public class CsvClient {
     private ObjectMapper objectMapper;

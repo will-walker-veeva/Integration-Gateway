@@ -7,7 +7,9 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-
+/**
+ * Class representing a File record
+ */
 public class File {
     private java.io.File file;
     private boolean isDeleteAsync = false;

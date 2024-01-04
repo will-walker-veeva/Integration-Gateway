@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
+/**
+ * Result holder class for a Query Response
+ * @param <T>
+ */
 public class QueryResult <T> implements Iterable<T>{
     private List<T> results;
 

@@ -5,6 +5,9 @@ import javax.xml.stream.events.*;
 import java.io.InputStream;
 import java.util.*;
 
+/**
+ * The XmlReader interface allows forward, read-only access to XML. It is designed to be the lowest level and most efficient way to read XML data.
+ */
 public class XmlReader {
     private XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
     private String dtd = null;
@@ -18,6 +21,11 @@ public class XmlReader {
         this.reader = xmlInputFactory.createXMLEventReader(inputStream);
     }
 
+    /**
+     * Returns true if there are more parsing elements and false if there are no more elements.
+     * @return
+     * @throws Exception
+     */
     public boolean hasNext() throws Exception{
         XMLEvent peek = reader.peek();
         if (peek.isEndDocument()){
@@ -25,6 +33,12 @@ public class XmlReader {
         }
         return this.reader.hasNext();
     }
+
+    /**
+     * Returns the next XmlElement
+     * @return
+     * @throws Exception
+     */
 
     public XmlElement getNext() throws Exception{
         XMLEvent event = this.reader.nextEvent();
@@ -72,14 +86,26 @@ public class XmlReader {
         return response;
     }
 
+    /**
+     * @hidden
+     * @return
+     */
     protected XMLEventReader getReader(){
         return this.reader;
     }
 
+    /**
+     * @hidden
+     * @return
+     */
     protected String getDTD(){
         return this.dtd;
     }
 
+    /**
+     * @hidden
+     * @throws Exception
+     */
     protected void initiate() throws Exception{
         if(reader.hasNext() && reader.peek().getEventType() == XMLStreamConstants.START_DOCUMENT){
             XMLEvent event = this.reader.nextEvent();
@@ -92,10 +118,18 @@ public class XmlReader {
         }
     }
 
+    /**
+     * @hidden
+     * @return
+     */
     protected String getEncoding() {
         return encoding;
     }
 
+    /**
+     * @hidden
+     * @return
+     */
     protected String getVersion() {
         return version;
     }

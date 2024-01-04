@@ -19,6 +19,10 @@ import java.io.*;
 import java.util.*;
 import java.util.stream.StreamSupport;
 
+/**
+ * Client for XML operations, reading XML files and mapping to/from XML models
+ *  See also {@link com.veeva.vault.custom.app.model.xml}<br>
+ */
 @Service
 public class XmlClient {
     private ObjectMapper objectMapper;

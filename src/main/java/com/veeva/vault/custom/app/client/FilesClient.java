@@ -18,6 +18,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Client for File-based operations
+ */
 @Service
 public class FilesClient {
     private Client client;

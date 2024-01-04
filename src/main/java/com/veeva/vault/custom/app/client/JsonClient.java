@@ -28,6 +28,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Client for JSON operations, reading JSON files and mapping to/from JSON models
+ *  See also {@link com.veeva.vault.custom.app.model.json}<br>
+ */
 @Service
 public class JsonClient {
     private ObjectMapper objectMapper;

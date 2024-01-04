@@ -10,6 +10,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Represents a JSON object.
+ */
 public class JsonObject implements Map<String, Object> {
     @AnyGetter
     @AnySetter
