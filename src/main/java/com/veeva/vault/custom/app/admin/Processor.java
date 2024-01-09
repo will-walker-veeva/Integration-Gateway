@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Entity
@@ -82,12 +83,15 @@ public class Processor extends VaultConfigurationRecord {
     private ScriptLibraryHolder scriptLibraryHolder;
 
     public Processor() {
+        super();
     }
 
-    public Processor(String customerId, String endPointUrl, Processor.Type type){
+    public Processor(String customerId, String endPointUrl, Processor.Type type, EnvironmentType environmentType){
+        super();
         this.customerApiName = customerId;
         this.endpointUrl = endPointUrl;
         this.processorType = type;
+        super.setEnvironmentType(Arrays.asList(environmentType.toString()));
     }
 
     public LogLevel getLogLevel() {

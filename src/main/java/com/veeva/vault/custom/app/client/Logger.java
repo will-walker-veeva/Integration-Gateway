@@ -55,7 +55,7 @@ public class Logger {
         return new Logger(requestProcessorId);
     }
 
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX").withZone(ZoneId.ofOffset("", ZoneOffset.UTC));
+    public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX").withZone(ZoneId.ofOffset("", ZoneOffset.UTC));
     public enum Level {
         TRACE,
         DEBUG,
@@ -74,7 +74,7 @@ public class Logger {
     public void log(String message, Level level) {
         String threadId = Thread.currentThread().getName();
         if(logs.get(threadId) == null) logs.put(threadId, new ArrayList<Log>());
-        logs.get(threadId).add(new Log(this.requestProcessorId, level.getAPIName(), message, formatter.format(Instant.now())));
+        logs.get(threadId).add(new Log(this.requestProcessorId, level.getAPIName(), message, DATE_TIME_FORMATTER.format(Instant.now())));
         logger.log(org.apache.logging.log4j.Level.valueOf(level.toString()), message);
     }
 
@@ -84,7 +84,7 @@ public class Logger {
         String formattedMessage = logMessage.getFormattedMessage();
         String threadId = Thread.currentThread().getName();
         if(logs.get(threadId) == null) logs.put(threadId, new ArrayList<Log>());
-        logs.get(threadId).add(new Log(this.requestProcessorId, level.getAPIName(), formattedMessage, formatter.format(Instant.now())));
+        logs.get(threadId).add(new Log(this.requestProcessorId, level.getAPIName(), formattedMessage, DATE_TIME_FORMATTER.format(Instant.now())));
         logger.log(org.apache.logging.log4j.Level.valueOf(level.toString()), message);;
         logger.log(org.apache.logging.log4j.Level
                 .valueOf(level.toString()), logMessage);
@@ -93,7 +93,7 @@ public class Logger {
     public void log(String message, String stackTrace, Level level) {
         String threadId = Thread.currentThread().getName();
         if(logs.get(threadId) == null) logs.put(threadId, new ArrayList<Log>());
-        logs.get(threadId).add(new Log(this.requestProcessorId, level.getAPIName(), message, stackTrace, formatter.format(Instant.now())));
+        logs.get(threadId).add(new Log(this.requestProcessorId, level.getAPIName(), message, stackTrace, DATE_TIME_FORMATTER.format(Instant.now())));
         logger.log(org.apache.logging.log4j.Level
                 .valueOf(level.toString()), message, stackTrace);
     }
@@ -104,7 +104,7 @@ public class Logger {
         e.printStackTrace(pw);
         String threadId = Thread.currentThread().getName();
         if(logs.get(threadId) == null) logs.put(threadId, new ArrayList<Log>());
-        logs.get(threadId).add(new Log(this.requestProcessorId, level.getAPIName(), message, sw.toString(), formatter.format(Instant.now())));
+        logs.get(threadId).add(new Log(this.requestProcessorId, level.getAPIName(), message, sw.toString(), DATE_TIME_FORMATTER.format(Instant.now())));
         logger.log(org.apache.logging.log4j.Level
                 .valueOf(level.toString()), message, e.getStackTrace());
     }
@@ -117,7 +117,7 @@ public class Logger {
         String formattedMessage = logMessage.getFormattedMessage();
         String threadId = Thread.currentThread().getName();
         if(logs.get(threadId) == null) logs.put(threadId, new ArrayList<Log>());
-        logs.get(threadId).add(new Log(this.requestProcessorId, level.getAPIName(), formattedMessage, sw.toString(), formatter.format(Instant.now())));
+        logs.get(threadId).add(new Log(this.requestProcessorId, level.getAPIName(), formattedMessage, sw.toString(), DATE_TIME_FORMATTER.format(Instant.now())));
         logger.log(org.apache.logging.log4j.Level
                 .valueOf(level.toString()), logMessage, e);
     }
@@ -198,7 +198,7 @@ public class Logger {
         log(message, Level.TRACE, e, arguments);
     }
 
-    protected boolean isDebugEnabled(){
+    public boolean isDebugEnabled(){
         return this.logger.isDebugEnabled();
     }
 }

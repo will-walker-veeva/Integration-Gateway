@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -32,6 +33,7 @@ import java.util.concurrent.Executor;
         "com.veeva.vault.custom", "com.veeva.vault.custom.app.admin", "com.veeva.vault.custom.app.repository", "com.veeva.vault.custom.app", "com.veeva.vault.custom.app.client", "com.veeva.vault.custom.app.model"})
 @EnableScheduling
 @EnableAsync
+@EnableWebSecurity
 public class Application implements CommandLineRunner {
 
     @Autowired
@@ -64,23 +66,7 @@ public class Application implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        String userHomeDir = System.getProperty("user.home");
         Logger logger = Logger.getLogger(Application.class);
-        File sessionFile = new File(userHomeDir+"/sessions.json");
-        if(sessionFile.exists()) {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper(new JsonFactory());
-                String content = Files.readString(sessionFile.toPath());
-                List<Session> sessionList = objectMapper.readValue(content, new TypeReference<List<Session>>() {
-                });
-                sessionRepository.saveAll(sessionList);
-                sessionFile.delete();
-            } catch (Exception e) {
-                logger.error("Error reading session file", e);
-                e.printStackTrace();
-            }
-        }else{
-            logger.info("Session File not found");
-        }
+        logger.info("Starting application ... ");
     }
 }

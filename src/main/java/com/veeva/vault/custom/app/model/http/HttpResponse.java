@@ -16,6 +16,7 @@ public class HttpResponse {
      * @hidden
      */
     public HttpResponse() {
+        this.responseCode = 200;
     }
 
     /**

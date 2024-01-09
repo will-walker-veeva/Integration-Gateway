@@ -58,8 +58,13 @@ public class Client {
      * @param autowiredClient
      * @param requestProcessorId
      */
-    protected Client(Client autowiredClient, String requestProcessorId){
-        this(autowiredClient, requestProcessorId, null, null);
+    public Client(Client autowiredClient, String requestProcessorId){
+        this.requestProcessorId = requestProcessorId;
+        if(autowiredClient!=null) {
+            this.encryptionClient = autowiredClient.encryptionClient;
+            this.emailClient = autowiredClient.emailClient;
+            this.queryClient = autowiredClient.queryClient;
+        }
     }
 
     /**
@@ -69,15 +74,18 @@ public class Client {
      * @param vaultDns
      * @param vaultSessionId
      */
-    protected Client(Client autowiredClient, String requestProcessorId, String vaultDns, String vaultSessionId){
-        this.requestProcessorId = requestProcessorId;
-        if(autowiredClient!=null) {
-            this.encryptionClient = autowiredClient.encryptionClient;
-            this.emailClient = autowiredClient.emailClient;
-            this.queryClient = autowiredClient.queryClient;
+    public Client(Client autowiredClient, String requestProcessorId, String vaultDns, String vaultSessionId) throws AuthenticationException {
+        this(autowiredClient, requestProcessorId);
+        this.vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(vaultDns).withVaultSessionId(vaultSessionId).withVaultClientId(VAULT_CLIENT_ID).withValidation(true).withApiErrorLogging(true).withHttpTimeout(120).build();
+        if(!this.vaultClient.hasSessionId()){
+            boolean valid = this.vaultClient.validateSession();
+            if(!valid) throw new AuthenticationException("Authentication response failed");
         }
-        if(vaultDns!=null&&vaultSessionId!=null)
-            this.vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(vaultDns).withVaultSessionId(vaultSessionId).withVaultClientId(VAULT_CLIENT_ID).withValidation(true).withApiErrorLogging(true).withHttpTimeout(120).build();
+        if(this.vaultClient.getAuthenticationResponse()!=null && this.vaultClient.getAuthenticationResponse().hasErrors()){
+            throw new AuthenticationException(this.vaultClient.getAuthenticationResponse().getResponseMessage());
+        }else if (this.vaultClient.getAuthenticationResponse()==null){
+            throw new AuthenticationException("Authentication response failed");
+        }
     }
 
     /**
@@ -180,10 +188,10 @@ public class Client {
     }
 
     /**
-     * @hide
+     * @hidden
      * @param logs
      */
-    protected void setLogs(List<Log> logs) {
+    public void setLogs(List<Log> logs) {
         this.logs = logs;
     }
 

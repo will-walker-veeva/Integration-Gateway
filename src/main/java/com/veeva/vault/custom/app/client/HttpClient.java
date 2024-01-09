@@ -4,6 +4,9 @@ import com.veeva.vault.custom.app.exception.ProcessException;
 import com.veeva.vault.custom.app.model.http.HttpResponseType;
 import com.veeva.vault.custom.app.model.json.JsonArray;
 import com.veeva.vault.custom.app.model.json.JsonObject;
+import com.veeva.vault.custom.app.model.xml.XmlEnd;
+import com.veeva.vault.custom.app.model.xml.XmlStart;
+import com.veeva.vault.custom.app.model.xml.XmlWriter;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPatch;
@@ -19,6 +22,7 @@ import org.apache.http.util.EntityUtils;
 import org.springframework.stereotype.Service;
 
 import javax.net.ssl.SSLContext;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -507,5 +511,46 @@ public class HttpClient{
             throw new ProcessException(e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * Constructs a standard response message based on the incoming request
+     * @param request
+     * @param e
+     * @return
+     */
+    public String buildResponseBody(com.veeva.vault.custom.app.model.http.HttpRequest request, Exception e){
+        String accept = request.getHeaders().get("accept");
+        if(accept!=null){
+            if(accept.equals("application/json")){
+                JsonObject jsonObject = new JsonObject();
+                jsonObject.put("responseStatus", "FAILURE");
+                JsonArray errors = new JsonArray();
+                JsonObject message = new JsonObject();
+                message.put("type", e.getCause().toString());
+                message.put("message", e.getMessage());
+                jsonObject.put("errors", errors);
+                return jsonObject.toString();
+            }else if (accept.equals("application/xml")){
+                try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+                    XmlWriter writer = new XmlWriter(byteArrayOutputStream, "UTF-8", "1.0", null);
+                    writer.add(new XmlStart("responseStatus"));
+                    writer.add(new XmlEnd("responseStatus", "FAILURE"));
+                    writer.add(new XmlStart("errors"));
+                    writer.add(new XmlStart("error"));
+                    writer.add(new XmlStart("type"));
+                    writer.add(new XmlEnd("type", e.getCause().toString()));
+                    writer.add(new XmlStart("message"));
+                    writer.add(new XmlEnd("message", e.getMessage()));
+                    writer.add(new XmlEnd("error", null));
+                    writer.add(new XmlEnd("errors", null));
+                    writer.close();
+                    return new String(byteArrayOutputStream.toByteArray(), StandardCharsets.UTF_8);
+                }catch(Exception f){
+
+                }
+            }
+        }
+        return "FAILURE: "+e.getMessage();
     }
 }

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import com.veeva.vault.custom.app.admin.*;
-import com.veeva.vault.custom.app.model.files.File;
 import com.veeva.vault.custom.app.repository.*;
 import com.veeva.vault.custom.app.client.*;
 import com.veeva.vault.custom.app.model.json.*;
@@ -27,6 +26,8 @@ import org.springframework.web.servlet.ModelAndView;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -39,24 +40,22 @@ import static com.veeva.vault.custom.app.client.Client.VAULT_CLIENT_ID;
 public class AdminController {
     @Autowired
     VaultSessionRepository sessionRepository;
-
     @Autowired
     AppConfiguration appConfiguration;
-
     @Autowired
-    ScriptClient scriptExecutionUtils;
-
+    ScriptUtilities scriptExecutionUtils;
     @Autowired
     VaultProcessorRepository configurationRepository;
     @Autowired
     VaultScriptLibraryRepository scriptLibraryRepository;
-
+    @Autowired
+    VaultConfigurationCacheRepository vaultConfigurationCacheRepository;
     @Autowired
     ThreadRegistry threadRegistry;
-
     @Autowired
     ContextRepository cacheRepository;
-
+    @Autowired
+    IPWhitelistRepository whitelistRepository;
     FilesClient filesClient;
     ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).registerModule(new JavaTimeModule());
 
@@ -141,21 +140,32 @@ public class AdminController {
         threadRegistry.save(new ThreadItem(Thread.currentThread().getName(), null));
         VaultClient vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(appConfiguration.getVaultConfigurationHost()).withVaultClientId(VAULT_CLIENT_ID).withVaultSessionId(sessionId).build();
         QueryRequest queryRequest = vaultClient.newRequest(QueryRequest.class);
-        QueryResponse queryResponse = queryRequest.query("SELECT id, global_id__sys, log_level__c, object_type__vr.api_name__v, environment_type__c, customer__cr.name__v, customer__cr.api_name__c, endpoint_url__c, authentication_method__c, LONGTEXT(definition__c), LONGTEXT(configuration__c), api_token__c, response_type__c, method__c, (SELECT script_library__cr.class_name__c, script_library__cr.package_name__c, script_library__cr.validated_name__c FROM libraryprocessor_joins__cr) FROM processor__c WHERE id = '"+id+"'");
+        QueryResponse queryResponse = queryRequest.query("SELECT id, global_id__sys, log_level__c, object_type__vr.api_name__v, environment_type__c, customer__cr.name__v, customer__cr.api_name__c, endpoint_url__c, authentication_method__c, LONGTEXT(definition__c), LONGTEXT(configuration__c), api_token__c, response_type__c, method__c, (SELECT script_library__cr.class_name__c, script_library__cr.package_name__c, script_library__cr.validated_name__c FROM libraryprocessor_joins__cr), (SELECT id, object_type__vr.api_name__v, processor__c, domain_name__c, start_ip_range__c, end_ip_range__c FROM whitelisted_items__cr WHERE status__v = 'active__v' ) FROM processor__c WHERE id = '"+id+"'");
         System.out.println(queryResponse.getResponseJSON().toString());
-        String jsonResponse = queryResponse.getData().get(0).toJsonString();
+        QueryResponse.QueryResult data = queryResponse.getData().get(0);
         ResponseEntity response = null;
         try{
-            Processor processor = objectMapper.readerFor(Processor.class).readValue(jsonResponse);
-            ScriptClient.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployScript(processor);
-            if(validationResponse.isValidated()){
-                response = ResponseEntity.ok("SUCCESS");
-                configurationRepository.save(processor);
-            }else{
-                response = ResponseEntity.badRequest().body(validationResponse.getValidationMessage());
-            }
+            JsonArray whitelistedItemData = new JsonArray(data.getSubQuery("whitelisted_items__cr").toJSONObject().getJSONArray("data").toString());
+            List<WhitelistedElement> whitelistedElements = objectMapper.readerFor(objectMapper.getTypeFactory().constructCollectionType(List.class, WhitelistedElement.class)).readValue(whitelistedItemData.toString());
+            whitelistRepository.deleteByProcessorId(id);
+            whitelistRepository.saveAll(whitelistedElements);
         }catch (Exception e){
             response = ResponseEntity.badRequest().body("ERROR: "+e.getMessage());
+        }
+        if(response==null) {
+            String jsonResponse = data.toJsonString();
+            try {
+                Processor processor = objectMapper.readerFor(Processor.class).readValue(jsonResponse);
+                ScriptUtilities.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployScript(processor);
+                if (validationResponse.isValidated()) {
+                    response = ResponseEntity.ok("SUCCESS");
+                    configurationRepository.save(processor);
+                } else {
+                    response = ResponseEntity.badRequest().body(validationResponse.getValidationMessage());
+                }
+            } catch (Exception e) {
+                response = ResponseEntity.badRequest().body("ERROR: " + e.getMessage());
+            }
         }
         Logger.getLogs(Thread.currentThread().getName());
         return response;
@@ -171,7 +181,7 @@ public class AdminController {
         ResponseEntity response = null;
         try{
             ScriptLibrary scriptLibrary = objectMapper.readerFor(ScriptLibrary.class).readValue(jsonResponse);
-            ScriptClient.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployLibrary(scriptLibrary);
+            ScriptUtilities.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployLibrary(scriptLibrary);
             if(validationResponse.isValidated()){
                 response = ResponseEntity.ok("SUCCESS");
                 scriptLibraryRepository.save(scriptLibrary);
@@ -226,15 +236,24 @@ public class AdminController {
         threadRegistry.save(new ThreadItem(Thread.currentThread().getName(), null));
         String authorization = requestBody.get("authorization");
         String vaultDNS = requestBody.get("vaultDNS");
-        String id = requestBody.get("id");
+        String globalId = requestBody.get("id");
         String field = requestBody.get("field");
         String objectName = requestBody.get("objectName");
         ModelAndView response = null;
         if(vaultDNS.equals(appConfiguration.getVaultConfigurationHost())){
             VaultClient client = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(appConfiguration.getVaultConfigurationHost()).withVaultClientId(VAULT_CLIENT_ID).withVaultSessionId(authorization).build();
-            QueryResponse queryResponse = client.newRequest(QueryRequest.class).query("SELECT LONGTEXT("+field+") FROM "+objectName+" WHERE global_id__sys = '"+id+"'");
-            String definition = queryResponse.getData().get(0).getString(field);
-            model.addAttribute("definition", definition);
+            Optional<VaultConfigurationRecordCache> cache = vaultConfigurationCacheRepository.findByObjectNameAndFieldAndGlobalId(objectName, field, globalId);
+            if(cache.isPresent()){
+                String definition = cache.get().getDefinition();
+                model.addAttribute("definition", definition);
+            }else {
+                QueryResponse queryResponse = client.newRequest(QueryRequest.class).query("SELECT id, LONGTEXT(" + field + ") FROM " + objectName + " WHERE global_id__sys = '" + globalId + "'");
+                QueryResponse.QueryResult result = queryResponse.getData().get(0);
+                String definition = result.getString(field);
+                String id = result.getString("id");
+                model.addAttribute("definition", definition);
+                vaultConfigurationCacheRepository.save(new VaultConfigurationRecordCache(objectName, id, globalId, field, definition, LocalDateTime.now()));
+            }
             response = new ModelAndView("plainViewerPost");
         }else{
             response = new ModelAndView("plainViewerGet");
@@ -253,15 +272,24 @@ public class AdminController {
         threadRegistry.save(new ThreadItem(Thread.currentThread().getName(), null));
         String authorization = requestBody.get("authorization");
         String vaultDNS = requestBody.get("vaultDNS");
-        String id = requestBody.get("id");
+        String globalId = requestBody.get("id");
         String field = requestBody.get("field");
         String objectName = requestBody.get("objectName");
         ModelAndView response = null;
         if(vaultDNS.equals(appConfiguration.getVaultConfigurationHost())){
             VaultClient client = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(appConfiguration.getVaultConfigurationHost()).withVaultClientId(VAULT_CLIENT_ID).withVaultSessionId(authorization).build();
-            QueryResponse queryResponse = client.newRequest(QueryRequest.class).query("SELECT LONGTEXT("+field+") FROM "+objectName+" WHERE global_id__sys = '"+id+"'");
-            String definition = queryResponse.getData().get(0).getString(field);
-            model.addAttribute("definition", definition);
+            Optional<VaultConfigurationRecordCache> cache = vaultConfigurationCacheRepository.findByObjectNameAndFieldAndGlobalId(objectName, field, globalId);
+            if(cache.isPresent()){
+                String definition = cache.get().getDefinition();
+                model.addAttribute("definition", definition);
+            }else {
+                QueryResponse queryResponse = client.newRequest(QueryRequest.class).query("SELECT id, LONGTEXT(" + field + ") FROM " + objectName + " WHERE global_id__sys = '" + globalId + "'");
+                QueryResponse.QueryResult result = queryResponse.getData().get(0);
+                String definition = result.getString(field);
+                String id = result.getString("id");
+                model.addAttribute("definition", definition);
+                vaultConfigurationCacheRepository.save(new VaultConfigurationRecordCache(objectName, id, globalId, field, definition, LocalDateTime.now()));
+            }
             response = new ModelAndView("javaViewerPost");
         }else{
             response = new ModelAndView("javaViewerGet");
@@ -286,9 +314,18 @@ public class AdminController {
         String field = requestBody.get("field");
         if(vaultDNS.equals(appConfiguration.getVaultConfigurationHost())){
             VaultClient client = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(appConfiguration.getVaultConfigurationHost()).withVaultClientId(VAULT_CLIENT_ID).withVaultSessionId(authorization).build();
-            QueryResponse queryResponse = client.newRequest(QueryRequest.class).query("SELECT LONGTEXT("+field+") FROM "+objectName+" WHERE id = '"+id+"'");
-            String definition = queryResponse.getData().get(0).getString(field);
-            model.addAttribute("definition", definition);
+            Optional<VaultConfigurationRecordCache> cache = vaultConfigurationCacheRepository.findByObjectNameAndFieldAndId(objectName, field, id);
+            if(cache.isPresent()){
+                String definition = cache.get().getDefinition();
+                model.addAttribute("definition", definition);
+            }else{
+                QueryResponse queryResponse = client.newRequest(QueryRequest.class).query("SELECT global_id__sys, LONGTEXT("+field+") FROM "+objectName+" WHERE id = '"+id+"'");
+                QueryResponse.QueryResult result = queryResponse.getData().get(0);
+                String definition = result.getString(field);
+                String globalId = result.getString("global_id__sys");
+                model.addAttribute("definition", definition);
+                vaultConfigurationCacheRepository.save(new VaultConfigurationRecordCache(objectName, id, globalId, field, definition, LocalDateTime.now()));
+            }
             model.addAttribute("field", field);
             model.addAttribute("id", id);
             model.addAttribute("objectName", objectName);
@@ -306,23 +343,26 @@ public class AdminController {
     public ModelAndView saveScript(@RequestParam String vaultDNS, @RequestParam String authorization, @RequestParam String objectName, @RequestParam String id, @RequestParam String field, @RequestParam String definition, Model model) {
         threadRegistry.save(new ThreadItem(Thread.currentThread().getName(), null));
         VaultClient client = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(appConfiguration.getVaultConfigurationHost()).withVaultClientId(VAULT_CLIENT_ID).withVaultSessionId(authorization).build();
-        ScriptClient.ScriptValidationResponse validationResponse = scriptExecutionUtils.newScriptValidationResponseInstance();
+        ScriptUtilities.ScriptValidationResponse validationResponse = scriptExecutionUtils.newScriptValidationResponseInstance();
+        String globalId = null;
         if(field.equals("definition__c")){
-            String relationshipQuery = objectName.equals("script_library__c")? "SELECT id, global_id__sys, environment_type__c, package_name__c, class_name__c, (SELECT id, global_id__sys, referring_library__cr.package_name__c, referring_library__cr.class_name__c, referring_library__cr.validated_name__c FROM childibrary_joins__cr where status__v = 'active__v') FROM "+objectName+" WHERE id = '"+id+"'" : "SELECT id, environment_type__c, (SELECT script_library__cr.class_name__c, script_library__cr.package_name__c, script_library__cr.validated_name__c FROM libraryprocessor_joins__cr where status__v = 'active__v') FROM "+objectName+" WHERE id = '"+id+"'";
+            String relationshipQuery = objectName.equals("script_library__c")? "SELECT id, global_id__sys, environment_type__c, package_name__c, class_name__c, (SELECT id, global_id__sys, referring_library__cr.package_name__c, referring_library__cr.class_name__c, referring_library__cr.validated_name__c FROM childibrary_joins__cr where status__v = 'active__v') FROM "+objectName+" WHERE id = '"+id+"'" : "SELECT id, global_id__sys, environment_type__c, (SELECT script_library__cr.class_name__c, script_library__cr.package_name__c, script_library__cr.validated_name__c FROM libraryprocessor_joins__cr where status__v = 'active__v') FROM "+objectName+" WHERE id = '"+id+"'";
             QueryResponse queryResponse = client.newRequest(QueryRequest.class).query(relationshipQuery);
             String jsonResponse = queryResponse.getData().get(0).toJsonString();
             try {
                 if(objectName.equals("script_library__c")){
                     ScriptLibrary library = objectMapper.readerFor(ScriptLibrary.class).readValue(jsonResponse);
                     library.setDefinition(definition);
+                    globalId = library.getGlobalId();
                     validationResponse = scriptExecutionUtils.validateLibrary(library);
                 }else{
                     Processor processor = objectMapper.readerFor(Processor.class).readValue(jsonResponse);
                     processor.setDefinition(definition);
+                    globalId = processor.getGlobalId();
                     scriptExecutionUtils.validateScript(processor);
                 }
             }catch(Exception e){
-                validationResponse = new ScriptClient.ScriptValidationResponse(false, e.getMessage());
+                validationResponse = new ScriptUtilities.ScriptValidationResponse(false, e.getMessage());
             }
         }
         if(validationResponse.isValidated()) {
@@ -343,6 +383,7 @@ public class AdminController {
                 model.addAttribute("success", true);
                 model.addAttribute("message", "Element saved successfully");
             }
+            vaultConfigurationCacheRepository.save(new VaultConfigurationRecordCache(objectName, id, globalId, field, definition, LocalDateTime.now()));
         }else{
             model.addAttribute("success", false);
             model.addAttribute("message", validationResponse.getValidationMessage().length()>512? "Failed to compile script: "+validationResponse.getValidationMessage().substring(0, 512) : "Failed to compile script: "+validationResponse.getValidationMessage());
@@ -373,15 +414,25 @@ public class AdminController {
         }
         VaultClient vaultClient = VaultClient.newClientBuilder(VaultClient.AuthenticationType.SESSION_ID).withVaultDNS(appConfiguration.getVaultConfigurationHost()).withVaultClientId(VAULT_CLIENT_ID).withVaultSessionId(authorization).build();
         QueryRequest queryRequest = vaultClient.newRequest(QueryRequest.class);
-        QueryResponse queryResponse = queryRequest.query("SELECT id, global_id__sys, log_level__c, object_type__vr.api_name__v, environment_type__c, customer__cr.name__v, customer__cr.api_name__c, endpoint_url__c, authentication_method__c, LONGTEXT(definition__c), LONGTEXT(configuration__c), api_token__c, response_type__c, method__c, (SELECT script_library__cr.class_name__c, script_library__cr.package_name__c, script_library__cr.validated_name__c FROM libraryprocessor_joins__cr) FROM processor__c WHERE state__v = 'active_state__c'");
+        QueryResponse queryResponse = queryRequest.query("SELECT id, global_id__sys, log_level__c, object_type__vr.api_name__v, environment_type__c, customer__cr.name__v, customer__cr.api_name__c, endpoint_url__c, authentication_method__c, LONGTEXT(definition__c), LONGTEXT(configuration__c), api_token__c, response_type__c, method__c, (SELECT script_library__cr.class_name__c, script_library__cr.package_name__c, script_library__cr.validated_name__c FROM libraryprocessor_joins__cr), (SELECT id, object_type__vr.api_name__v, processor__c, domain_name__c, start_ip_range__c, end_ip_range__c FROM whitelisted_items__cr WHERE status__v = 'active__v' ) FROM processor__c WHERE state__v = 'active_state__c'");
         for(QueryResponse.QueryResult record : queryResponse.getData()){
             String jsonResponse = record.toJsonString();
+            String processorId = null;
             try{
                 Processor processor = objectMapper.readerFor(Processor.class).readValue(jsonResponse);
-                ScriptClient.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployScript(processor);
+                ScriptUtilities.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployScript(processor);
+                processorId = processor.getId();
                 if(validationResponse.isValidated()){
                     configurationRepository.save(processor);
                 }
+            }catch (Exception e){
+                Logger.getLogger(this.getClass()).error(e.getMessage(), e);
+            }
+            try{
+                whitelistRepository.deleteByProcessorId(processorId);
+                JsonArray whitelistedItemData = new JsonArray(record.getSubQuery("whitelisted_items__cr").toJSONObject().getJSONArray("data").toString());
+                List<WhitelistedElement> whitelistedElements = objectMapper.readerFor(objectMapper.getTypeFactory().constructCollectionType(List.class, WhitelistedElement.class)).readValue(whitelistedItemData.toString());
+                whitelistRepository.saveAll(whitelistedElements);
             }catch (Exception e){
                 Logger.getLogger(this.getClass()).error(e.getMessage(), e);
             }
@@ -392,7 +443,7 @@ public class AdminController {
             String jsonResponse = record.toJsonString();
             try{
                 ScriptLibrary scriptLibrary = objectMapper.readerFor(ScriptLibrary.class).readValue(jsonResponse);
-                ScriptClient.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployLibrary(scriptLibrary);
+                ScriptUtilities.ScriptValidationResponse validationResponse = scriptExecutionUtils.deployLibrary(scriptLibrary);
                 if(validationResponse.isValidated()){
                     scriptLibraryRepository.save(scriptLibrary);
                 }
