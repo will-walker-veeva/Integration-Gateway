@@ -10,6 +10,7 @@ package com.veeva.vault.vapil.api.request;
 import com.veeva.vault.vapil.api.model.response.*;
 import com.veeva.vault.vapil.connector.HttpRequestConnector;
 import com.veeva.vault.vapil.connector.HttpRequestConnector.HttpMethod;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -543,7 +544,7 @@ public class FileStagingRequest extends VaultRequest {
 	 */
 	private String getItemAsUrl(String item) {
 		if (item == null || item.equals("/"))
-			return org.apache.commons.lang.StringUtils.EMPTY;
+			return StringUtils.EMPTY;
 		else if (item.startsWith("/"))
 			return item.substring(1);
 		else

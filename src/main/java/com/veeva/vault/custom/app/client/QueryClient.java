@@ -36,7 +36,7 @@ import net.sf.jsqlparser.util.validation.ValidationException;
 import net.sf.jsqlparser.util.validation.feature.DatabaseType;
 import net.sf.jsqlparser.util.validation.feature.FeaturesAllowed;
 import net.sf.jsqlparser.util.validation.validator.SelectValidator;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -176,7 +176,7 @@ public class QueryClient {
                             switch (propertyInfo.type()) {
                                 case TEXT:
                                 case LONG_TEXT:
-                                    value = "'" + StringEscapeUtils.escapeSql( obj.toString()) + "'";
+                                    value = "'" + escapeSQL( obj.toString()) + "'";
                                     break;
                                 case BOOLEAN:
                                     value = "" + (Boolean) obj;
@@ -186,11 +186,11 @@ public class QueryClient {
                                     break;
                                 case JSON:
                                     if(obj instanceof JsonModel){
-                                        value = "'" + StringEscapeUtils.escapeSql( jsonClient.serializeObject((JsonModel) obj)) + "'";
+                                        value = "'" + escapeSQL( jsonClient.serializeObject((JsonModel) obj)) + "'";
                                     }else if (obj instanceof Collection){
-                                        value = "'" + StringEscapeUtils.escapeSql( jsonClient.serializeObjects((Collection<JsonModel>)obj)) + "'";
+                                        value = "'" + escapeSQL( jsonClient.serializeObjects((Collection<JsonModel>)obj)) + "'";
                                     }else{
-                                        value = "'" + StringEscapeUtils.escapeSql( new ObjectMapper(new JsonFactory()).writeValueAsString(obj)) + "'";
+                                        value = "'" + escapeSQL( new ObjectMapper(new JsonFactory()).writeValueAsString(obj)) + "'";
                                     }
                                     break;
                                 case DOUBLE:
@@ -320,6 +320,51 @@ public class QueryClient {
             getBuffer().append(tableName.getName()+"_"+Thread.currentThread().getId());
             if(tableName.getAlias()!=null) getBuffer().append(' ').append(tableName.getAlias().getName());
         }
+    }
+
+    public static String escapeSQL(String s){
+        int length = s.length();
+        int newLength = length;
+        // first check for characters that might
+        // be dangerous and calculate a length
+        // of the string that has escapes.
+        for (int i=0; i<length; i++){
+            char c = s.charAt(i);
+            switch(c){
+                case '\\':
+                case '\"':
+                case '\'':
+                case '\0':{
+                    newLength += 1;
+                } break;
+            }
+        }
+        if (length == newLength){
+            // nothing to escape in the string
+            return s;
+        }
+        StringBuffer sb = new StringBuffer(newLength);
+        for (int i=0; i<length; i++){
+            char c = s.charAt(i);
+            switch(c){
+                case '\\':{
+                    sb.append("\\\\");
+                } break;
+                case '\"':{
+                    sb.append("\\\"");
+                } break;
+                case '\'':{
+                    sb.append("\\\'");
+                } break;
+                case '\0':{
+                    sb.append("\\0");
+                } break;
+                default: {
+                    sb.append(c);
+                }
+            }
+        }
+        return sb.toString();
     }
 
 

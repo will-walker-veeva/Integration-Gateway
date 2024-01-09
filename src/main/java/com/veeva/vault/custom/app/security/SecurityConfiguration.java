@@ -38,9 +38,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(request -> {
-            request.requestMatchers("/admin/**").permitAll()
-                    .requestMatchers(AntPathRequestMatcher.antMatcher("/h2-console/**")).permitAll().
-                    requestMatchers("/api/**").anonymous();
+            request.requestMatchers("/api/**").anonymous().anyRequest().permitAll();
             }).authenticationProvider(ipAuthenticationProvider)
             .csrf()
             .disable()

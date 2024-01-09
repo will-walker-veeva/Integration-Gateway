@@ -1,0 +1,17 @@
+com.veeva.vault.custom.app.client
+com.veeva.vault.custom.app.exception
+com.veeva.vault.custom.app.model.core
+com.veeva.vault.custom.app.model.csv
+com.veeva.vault.custom.app.model.files
+com.veeva.vault.custom.app.model.http
+com.veeva.vault.custom.app.model.json
+com.veeva.vault.custom.app.model.query
+com.veeva.vault.custom.app.model.xml
+com.veeva.vault.vapil.api.client
+com.veeva.vault.vapil.api.model
+com.veeva.vault.vapil.api.model.builder
+com.veeva.vault.vapil.api.model.common
+com.veeva.vault.vapil.api.model.metadata
+com.veeva.vault.vapil.api.model.response
+com.veeva.vault.vapil.api.request
+com.veeva.vault.vapil.connector

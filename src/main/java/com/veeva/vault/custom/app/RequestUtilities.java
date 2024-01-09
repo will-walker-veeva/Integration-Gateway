@@ -437,7 +437,7 @@ public class RequestUtilities {
         long capacity = 10;
         Refill refill = Refill.greedy(10, Duration.ofMinutes(1));
         Bandwidth limit = Bandwidth.classic(capacity, refill);
-        return Bucket4j.builder().addLimit(limit).build();
+        return Bucket.builder().addLimit(limit).build();
     }
 
     public boolean throttleRequest(HttpServletRequest httpRequest){
